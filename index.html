@@ -1054,8 +1054,8 @@
               \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
             </span>
           </td>
-          <td class="${data.gd === minGD ? 'best' : ''}">${data.gd.toExponential(2)}</td>
-          <td class="${data.igd === minIGD ? 'best' : ''}">${data.igd.toExponential(2)}</td>
+          <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
+          <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
         `;
         tableBody.appendChild(row);
       });
@@ -1116,8 +1116,8 @@
           }
 
           const hv = HV[name].toFixed(4);
-          const gd = GD[name].toExponential(2);
-          const igd = IGD[name].toExponential(2);
+          const gd = formatScientific(GD[name], 2);
+          const igd = formatScientific(IGD[name], 2);
 
           // Only show HV, GD, and IGD in the simplified output
           output += `${name}\nHV: ${hv}\nGD: ${gd}\nIGD: ${igd}\n\n`;
@@ -1191,6 +1191,17 @@
       });
       e.target.value = '';
     });
+
+
+    function formatScientific(number, digits) {
+      const str = number.toExponential(digits);
+      const parts = str.split('e');
+      const coefficient = parts[0];
+      const exponentNum = parseInt(parts[1], 10); // Parse exponent as integer
+      const sign = exponentNum >= 0 ? '+' : '-';
+      const exponent = sign + Math.abs(exponentNum).toString().padStart(2, '0'); // Ensure two-digit exponent
+      return `${coefficient}E${exponent}`;
+    }
 
     function addFileEntryUI(fileName, defaultColor) {
       const container = document.getElementById('fileListContainer');
