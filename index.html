@@ -532,8 +532,8 @@
           <th>前緣名稱</th>
           <th>#NDS</th>
           <th>HV</th>
-          <th>HV Rate (%)</th>
-          <th>Hit Rate (%)</th>
+          <th>HV Rate</th>
+          <th>Hit Rate</th>
           <th>GD</th>
           <th>IGD</th>
         </tr>
@@ -797,67 +797,38 @@
 
     function calculateHitRate(normalized) {
       const hitRate = {};
+      const hitCounts = {}; // New object to store the raw counts
       const coRisk = normalized["Combined Front"].risk;
+      const numCo = coRisk.length; // Total number of points in combined front
 
       for (const name in normalized) {
-        let time = 0;
+        let time = 0; // Number of hits/matches
         const otherRisk = normalized[name].risk;
 
-        // 檢查每個風險值是否在共前緣的風險值中
+        // Check if each risk value is in the combined front's risk values
         for (const r of otherRisk) {
-          // 使用浮點數比較，考慮精度問題
+          // Use floating point comparison, considering precision issues
           if (coRisk.some(coR => Math.abs(coR - r) < 1e-10)) {
             time += 1;
           }
         }
 
-        // Hit Rate = (匹配次數 / 共前緣風險點數量) * 100
-        const numCo = coRisk.length;
+        // Hit Rate = (matches / total points in combined front) * 100
         hitRate[name] = numCo > 0 ? (time / numCo) * 100 : 0;
+
+        // Store the raw counts for display
+        hitCounts[name] = {
+          hits: time,
+          total: numCo
+        };
       }
 
-      return hitRate;
+      return {
+        percentages: hitRate,
+        counts: hitCounts
+      };
     }
 
-    // 解析 metricsOutput 並生成表格
-    function generateMetricsTable() {
-      const metricsOutput = document.getElementById('metricsOutput').textContent;
-      const tableBody = document.getElementById('metricsTable').querySelector('tbody');
-      tableBody.innerHTML = ''; // 清空現有內容
-
-      // 按行解析 metricsOutput
-      const entries = metricsOutput.split('\n\n');
-      entries.forEach(entry => {
-        const lines = entry.split('\n');
-        if (lines.length < 4) return; // 確保格式正確
-
-        const name = lines[0].trim();
-        const hvMatch = lines[1].match(/HV:\s+([\d.]+)\s+\(([\d.eE-]+)\)/);
-        const gdMatch = lines[2].match(/GD:\s+([\d.eE-]+)\s+\(([\d.eE-]+)\)/);
-        const igdMatch = lines[3].match(/IGD:\s+([\d.eE-]+)\s+\(([\d.eE-]+)\)/);
-
-        if (!hvMatch || !gdMatch || !igdMatch) return;
-
-        const hv = hvMatch[1]; // 簡化格式 (e.g., 0.1234)
-        const gd = gdMatch[1]; // 科學記號格式 (e.g., 1.23e-4)
-        const igd = igdMatch[1]; // 科學記號格式 (e.g., 1.23e-4)
-
-        // 創建表格行
-        const row = document.createElement('tr');
-        row.innerHTML = `
-      <td>${name}</td>
-      <td>${hv}</td>
-      <td>${gd}</td>
-      <td>${igd}</td>
-    `;
-        tableBody.appendChild(row);
-      });
-
-      // 顯示表格容器
-      document.getElementById('metricsTableContainer').style.display = 'block';
-    }
-
-    // 按鈕點擊事件
     // 按鈕點擊事件
     document.getElementById('showTableBtn').addEventListener('click', () => {
       // 檢查前緣數量
@@ -971,76 +942,82 @@
 
     // 解析 metricsOutput 並生成表格
     function generateMetricsTable() {
-      // 檢查前緣數量
-      if (datasetMap.size < 2) {
+      // 檢查是否有足夠的前緣
+      if (!datasetMap || datasetMap.size < 2) {
         alert('請至少上傳兩個前緣檔案以顯示指標表格！');
         return;
       }
 
-      // 檢查是否所有前緣都有名稱
+      // 檢查所有前緣是否有名稱
       if (!checkAllNames()) {
         alert('請先為所有前緣輸入名稱！');
         return;
       }
 
-      const metricsOutput = document.getElementById('metricsOutput').textContent;
+      // 獲取原始指標數據
+      const rawData = {};
+      datasetMap.forEach((value, key) => {
+        rawData[key] = {
+          risk: value.data.map(d => d.x),
+          profit: value.data.map(d => d.y)
+        };
+      });
+
+      // 計算共前緣
+      const combinedFrontData = combineNonDominatedSets(datasetMap);
+      rawData["Combined Front"] = {
+        risk: combinedFrontData.risk,
+        profit: combinedFrontData.profit
+      };
+
+      // 標準化所有數據
+      const normalized = normalize(rawData);
+
+      // 計算所有指標
+      const HV = calcHV(normalized);
+      const GD = calcGD(normalized, "Combined Front");
+      const IGD = calcIGD(normalized, "Combined Front");
+      const hitRateResult = calculateHitRate(normalized);
+      const hitRate = hitRateResult.percentages;
+      const hitCounts = hitRateResult.counts;
+
+      // 計算 HV Rate
+      const combinedHV = HV["Combined Front"];
+      const HVR = {};
+      for (const name in HV) {
+        HVR[name] = combinedHV > 0 ? (HV[name] / combinedHV) * 100 : 0;
+      }
+
+      // 準備表格數據
       const tableBody = document.getElementById('metricsTable').querySelector('tbody');
       tableBody.innerHTML = ''; // 清空現有內容
 
-      // 儲存所有指標值以找出最佳值（排除共前緣）
+      // 存儲指標以找出最佳值（排除共前緣）
       const metricsData = [];
-      let combinedFrontData = null;
-      const entries = metricsOutput.split('\n\n');
+      let combinedFrontMetrics = null;
 
-      // 日誌：檢查解析的條目數量
-      console.log(`Parsing ${entries.length} entries from metricsOutput`);
-
-      entries.forEach((entry, index) => {
-        const lines = entry.split('\n');
-        if (lines.length < 7) {
-          console.warn(`Entry ${index} has insufficient lines:`, lines);
-          return; // 確保格式正確（包含 Points、HV、GD、IGD、HV Rate、Hit Rate）
-        }
-
-        const fileName = lines[0].trim();
-        const customName = fileName === "Combined Front" ? "Combined Front" : datasetMap.get(fileName)?.name || fileName;
-        const pointsMatch = lines[1].match(/Points:\s+(\d+)/);
-        const hvMatch = lines[2].match(/HV:\s+([\d.]+)\s+\(([\d.eE-]+)\)/);
-        const gdMatch = lines[3].match(/GD:\s+([\d.eE-]+)\s+\(([\d.eE-]+)\)/);
-        const igdMatch = lines[4].match(/IGD:\s+([\d.eE-]+)\s+\(([\d.eE-]+)\)/);
-        const hvRateMatch = lines[5].match(/HV Rate:\s+([\d.]+)%/);
-        const hitRateMatch = lines[6].match(/Hit Rate:\s+([\d.]+)%/);
-
-        if (!pointsMatch || !hvMatch || !gdMatch || !igdMatch || !hvRateMatch || !hitRateMatch) {
-          console.warn(`Entry ${index} has invalid format:`, lines);
-          return;
-        }
+      // 處理每個前緣的指標
+      for (const name in normalized) {
+        const pointCount = name === "Combined Front" ?
+          combinedFrontData.risk.length :
+          datasetMap.get(name)?.data.length || 0;
 
         const data = {
-          fileName,
-          customName,
-          points: parseInt(pointsMatch[1]),
-          hv: parseFloat(hvMatch[1]),
-          gd: parseFloat(gdMatch[2]), // 使用完整精度值進行比較
-          igd: parseFloat(igdMatch[2]), // 使用完整精度值進行比較
-          hvRate: parseFloat(hvRateMatch[1]),
-          hitRate: parseFloat(hitRateMatch[1])
+          fileName: name,
+          customName: name === "Combined Front" ? "Combined Front" : datasetMap.get(name)?.name || name,
+          points: pointCount,
+          hv: HV[name],
+          gd: GD[name],
+          igd: IGD[name],
+          hvRate: HVR[name],
+          hitRate: hitRate[name]
         };
 
-        if (fileName === "Combined Front") {
-          combinedFrontData = data;
+        if (name === "Combined Front") {
+          combinedFrontMetrics = data;
         } else {
           metricsData.push(data);
         }
-      });
-
-      // 日誌：檢查 metricsData 內容
-      console.log('metricsData:', metricsData);
-      console.log('combinedFrontData:', combinedFrontData);
-
-      // 檢查是否正確收集所有非共前緣數據
-      if (metricsData.length !== datasetMap.size) {
-        console.error(`Expected ${datasetMap.size} non-combined fronts, but got ${metricsData.length}`);
       }
 
       // 找出最佳值（僅限非共前緣）
@@ -1053,39 +1030,107 @@
 
       // 生成非共前緣行
       metricsData.forEach(data => {
+        // 安全訪問 hitCounts，提供默認值
+        const hitCount = hitCounts[data.fileName] || { hits: 0, total: 0 };
+
         const row = document.createElement('tr');
         row.innerHTML = `
-      <td>${data.customName}</td>
-      <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
-      <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
-      <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}</td>
-      <td class="${data.hitRate === maxHitRate ? 'best' : ''}">${data.hitRate.toFixed(2)}</td>
-      <td class="${data.gd === minGD ? 'best' : ''}">${data.gd.toExponential(2)}</td>
-      <td class="${data.igd === minIGD ? 'best' : ''}">${data.igd.toExponential(2)}</td>
-    `;
+          <td>${data.customName}</td>
+          <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
+          <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
+          <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
+          <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
+            ${data.hitRate.toFixed(2)}%
+            <span style="font-size: 0.7em; vertical-align: middle;">
+              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+            </span>
+          </td>
+          <td class="${data.gd === minGD ? 'best' : ''}">${data.gd.toExponential(2)}</td>
+          <td class="${data.igd === minIGD ? 'best' : ''}">${data.igd.toExponential(2)}</td>
+        `;
         tableBody.appendChild(row);
       });
 
-      // 添加共前緣行（不參與高亮）
-      if (combinedFrontData) {
-        const row = document.createElement('tr');
-        row.className = 'combined-front';
-        row.innerHTML = `
-      <td>${combinedFrontData.customName}</td>
-      <td>${combinedFrontData.points}</td>
-      <td>${combinedFrontData.hv.toFixed(4)}</td>
-      <td>${combinedFrontData.gd.toExponential(2)}</td>
-      <td>${combinedFrontData.igd.toExponential(2)}</td>
-      <td>${combinedFrontData.hvRate.toFixed(2)}</td>
-      <td>${combinedFrontData.hitRate.toFixed(2)}</td>
-    `;
-        tableBody.appendChild(row);
-      } else {
-        console.warn('Combined Front data not found in metricsOutput');
-      }
-
       // 顯示表格容器
       document.getElementById('metricsTableContainer').style.display = 'block';
+
+      // 渲染數學表達式
+      if (window.MathJax) {
+        MathJax.typeset();
+      }
+    }
+
+    // Also, make sure the calculateMetrics function is updated to only show HV, GD, and IGD
+    function calculateMetrics() {
+      const showTableBtn = document.getElementById('showTableBtn');
+      if (datasetMap.size < 2) {
+        document.getElementById('metricsOutput').style.display = 'none';
+        document.getElementById('metricsTableContainer').style.display = 'none';
+        showTableBtn.style.display = 'none';
+        return;
+      }
+
+      // Format raw data from datasetMap
+      const rawData = {};
+      datasetMap.forEach((value, key) => {
+        rawData[key] = {
+          risk: value.data.map(d => d.x),
+          profit: value.data.map(d => d.y)
+        };
+      });
+
+      // Calculate combined front first
+      const combinedFrontData = combineNonDominatedSets(datasetMap);
+
+      // Add combined front to raw data
+      rawData["Combined Front"] = {
+        risk: combinedFrontData.risk,
+        profit: combinedFrontData.profit
+      };
+
+      // Normalize all data including the combined front
+      const normalized = normalize(rawData);
+
+      try {
+        // Calculate metrics
+        const HV = calcHV(normalized);
+        const GD = calcGD(normalized, "Combined Front");
+        const IGD = calcIGD(normalized, "Combined Front");
+        const hitRateResult = calculateHitRate(normalized);
+        const hitRate = hitRateResult.percentages;
+
+        let output = '';
+        for (const name of Object.keys(normalized)) {
+          // Skip the Combined Front in the output display
+          if (name === "Combined Front") {
+            continue;
+          }
+
+          const hv = HV[name].toFixed(4);
+          const gd = GD[name].toExponential(2);
+          const igd = IGD[name].toExponential(2);
+
+          // Only show HV, GD, and IGD in the simplified output
+          output += `${name}\nHV: ${hv}\nGD: ${gd}\nIGD: ${igd}\n\n`;
+        }
+
+        const panel = document.getElementById('metricsOutput');
+        panel.textContent = output.trim();
+        panel.style.display = 'block';
+        showTableBtn.style.display = 'inline-block';
+
+        // Save calculated combined front for chart display
+        combinedFront = combinedFrontData;
+
+        // Hide the table until button is clicked
+        document.getElementById('metricsTableContainer').style.display = 'none';
+      } catch (e) {
+        console.error("Error calculating metrics:", e);
+        document.getElementById('metricsOutput').textContent = "Error calculating metrics: " + e.message;
+        document.getElementById('metricsOutput').style.display = 'block';
+        showTableBtn.style.display = 'none';
+        document.getElementById('metricsTableContainer').style.display = 'none';
+      }
     }
 
     // 按鈕點擊事件
