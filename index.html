@@ -567,14 +567,20 @@
 
     function resetField(fieldId) {
       document.getElementById(fieldId).value = defaultRanges[fieldId] ?? '';
-      drawChart();
+      // Only draw chart if there is data
+      if (datasetMap.size > 0) {
+        drawChart();
+      }
     }
 
     function resetAllRanges() {
       for (const key in defaultRanges) {
         document.getElementById(key).value = defaultRanges[key] ?? '';
       }
-      drawChart();
+      // Only draw chart if there is data
+      if (datasetMap.size > 0) {
+        drawChart();
+      }
     }
 
     function resetColors() {
@@ -592,7 +598,10 @@
         }
       });
 
-      drawChart();
+      // Only draw chart if there is data
+      if (datasetMap.size > 0) {
+        drawChart();
+      }
     }
 
     // Improved normalization function that matches Python implementation
@@ -1175,7 +1184,7 @@
               color
             });
             addFileEntryUI(file.name, color);
-            drawChart();
+            drawChart(); // drawChart 內會處理共前緣計算
           }
         };
         reader.readAsText(file, 'UTF-8');
@@ -1233,8 +1242,11 @@
       const ctx = document.getElementById('riskProfitChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
+      // 每次繪圖時重新計算共前緣
+      combinedFront = datasetMap.size > 0 ? combineNonDominatedSets(datasetMap) : null;
+
       const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name }]) => ({
-        label: name || fileName, // 使用自訂名稱，若無則使用檔案名稱
+        label: name || fileName,
         data: data,
         backgroundColor: color,
         borderColor: color,
@@ -1244,7 +1256,6 @@
         tension: 0
       }));
 
-      // 如果有計算好的共前緣，將其添加到圖表中
       if (combinedFront && combinedFront.risk.length > 0) {
         const combinedData = [];
         for (let i = 0; i < combinedFront.risk.length; i++) {
@@ -1253,7 +1264,6 @@
             y: combinedFront.profit[i]
           });
         }
-
         datasets.push({
           label: 'Combined Front',
           data: combinedData,
