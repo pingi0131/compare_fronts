@@ -1242,8 +1242,8 @@
       const ctx = document.getElementById('riskProfitChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
-      // 每次繪圖時重新計算共前緣
-      combinedFront = datasetMap.size > 0 ? combineNonDominatedSets(datasetMap) : null;
+      // 只有當前緣數量 >= 2 時才計算共前緣
+      combinedFront = datasetMap.size >= 2 ? combineNonDominatedSets(datasetMap) : null;
 
       const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name }]) => ({
         label: name || fileName,
