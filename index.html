@@ -408,25 +408,37 @@
       z-index: 1000;
       padding: 10px;
       border-radius: 5px;
-      width: 250px;
+      /*width: 345px;*/
     }
 
     .color-picker-tabs {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(3, 115px);
+      /* Fixed width of 115px for each tab (345px total / 3) */
       border-bottom: 1px solid #ccc;
       margin-bottom: 10px;
     }
 
     .color-picker-tabs button {
-      flex: 1;
       padding: 5px;
       background: #f0f0f0;
       color: #333333;
-      /* Darker text for contrast */
       border: none;
       cursor: pointer;
       font-size: 14px;
       border-radius: 3px 3px 0 0;
+      text-align: center;
+    }
+
+    .color-picker-content input[type="color"] {
+      width: 115px;
+      /* Match tab width */
+      height: 40px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      background: transparent;
+      padding: 0;
     }
 
     .color-picker-tabs button.active {
@@ -454,13 +466,16 @@
 
     .common-colors {
       display: grid;
-      grid-template-columns: repeat(5, 40px);
+      grid-template-columns: repeat(10, 30px);
+      /* 10 columns for the first row */
+      grid-auto-rows: 30px;
+      /* Ensure each row is 40px tall */
       gap: 5px;
     }
 
     .color-swatch {
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       border: 1px solid #ccc;
       cursor: pointer;
       border-radius: 3px;
@@ -478,9 +493,13 @@
     .hexrgb-inputs label {
       font-size: 14px;
       display: grid;
-      grid-template-columns: 60px 100px 60px;
+      grid-template-columns: 60px 115px 60px;
       align-items: center;
       gap: 5px;
+    }
+
+    .hexrgb-inputs input.rgb-slider {
+      width: 115px;
     }
 
     .hexrgb-inputs input.rgb-slider,
@@ -911,7 +930,7 @@
           datasetMap.get(name)?.data.length || 0;
         const data = {
           fileName: name,
-          customName: name === "Combined Front" ? "Combined Front" : datasetMap.get(name)?.name || name,
+          customName: name === "Combined Front" ? "Combined" : datasetMap.get(name)?.name || name,
           points: pointCount,
           hv: HV[name],
           gd: GD[name],
@@ -1048,47 +1067,66 @@
       modal.className = 'color-picker-modal';
       modal.style.display = 'none';
       modal.innerHTML = `
-    <div class="color-picker-tabs">
-      <button data-tab="common" class="active">常用顏色</button>
-      <button data-tab="hexrgb">HEX & RGB</button>
-    </div>
-    <div class="color-picker-content active" id="${modalId}-common">
-      <div class="common-colors">
-        ${[
-          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#C00000', '#00C000', '#0000C0',
-          '#FFC0CB', '#FFA500', '#800080', '#008080', '#FFD700', '#4B0082', '#F0E68C', '#E6E6FA', '#FFF0F5',
-          '#F5F5DC', '#D3D3D3', '#A9A9A9', '#696969', '#000000', '#FFFFFF'
-        ].map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')}
+        <div class="color-picker-tabs">
+          <button data-tab="common" class="active">常用顏色</button>
+          <button data-tab="hexrgb">HEX & RGB</button>
+          <button data-tab="native">原生選擇器</button>
+        </div>
+        <div class="color-picker-content active" id="${modalId}-common">
+          <div class="common-colors">
+            ${[
+                ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
+                ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
+                ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
+                ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
+                ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
+                /*['#C00000', '#FFE6E6', '#FFCCCC', '#FF9999', '#B30000'],
+                ['#FF0000', '#FF6666', '#FF3333', '#CC0000', '#990000'],
+                ['#FFC000', '#FFF2CC', '#FFE699', '#FFD966', '#BF9000'],
+                ['#FFFF00', '#FFFF99', '#FFFF66', '#CCCC00', '#999900'],
+                ['#92D050', '#CCFF99', '#B3E67A', '#8CCB5E', '#6B9B44'],
+                ['#00B050', '#99FFCC', '#66FF99', '#33CC66', '#26994D'],
+                ['#5B9BD5', '#B3CDEB', '#99BCE2', '#7FAAD8', '#4C739B'],
+                ['#4472C4', '#A3BFFA', '#8AA7FA', '#7088F5', '#3957A6'],
+                ['#002060', '#99A3CC', '#667AB3', '#335099', '#263C66'],
+                ['#7030A0', '#C2A3CC', '#AD80BF', '#985EAD', '#5E3A73']*/
+              ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
+          </div>
+        </div>
+        
+        <div class="color-picker-content" id="${modalId}-hexrgb">
+          <div class="hexrgb-inputs">
+            <label>紅:
+              <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
+              <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
+            </label>
+            <label>綠:
+              <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
+              <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
+            </label>
+            <label>藍:
+              <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
+              <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: 1; width: 24px; height: 24px; border: 1px solid #ccc;"></div>
+              <span style="font-size: 0.85em;">十六進位表示</span>
+              <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}" style="width: 100px;">
+            </div>
+
+            <label>不透明度:
+              <input type="range" min="0" max="1" step="0.01" value="1" class="opacity-slider">
+              <input type="number" min="0" max="1" step="0.01" value="1" class="opacity-number">
+            </label>
+            
+            <button class="confirm-btn">確認</button>
+          </div>
+        </div>
+        <div class="color-picker-content" id="${modalId}-native">
+          <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
+        </div>
       </div>
-    </div>
-    <div class="color-picker-content" id="${modalId}-hexrgb">
-  <div class="hexrgb-inputs">
-    <label>紅:
-      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
-      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
-    </label>
-    <label>綠:
-      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
-      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
-    </label>
-    <label>藍:
-      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
-      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
-    </label>
-    <label>十六進位:
-      <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}">
-    </label>
-    <label>不透明度:
-      <input type="range" min="0" max="1" step="0.01" value="1" class="opacity-slider">
-      <input type="number" min="0" max="1" step="0.01" value="1" class="opacity-number">
-    </label>
-    <label>預覽:
-      <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: 1;"></div>
-    </label>
-    <button class="confirm-btn">確認</button>
-  </div>
-</div>
-  `;
+      `;
 
       // Append modal to entry to ensure it's in the DOM
       entry.appendChild(modal);
@@ -1110,36 +1148,55 @@
         });
       });
 
-      // Color selection logic
+      // 在這裡添加顏色色塊的事件監聽器代碼
+      const colorSwatches = modal.querySelectorAll('.color-swatch');
+      colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          const color = swatch.getAttribute('data-color');
+          updateColor(color);
+        });
+      });
+
       const updateColor = (hex, opacity = 1) => {
         datasetMap.get(fileName).color = hex;
-        datasetMap.get(fileName).opacity = opacity; // Store opacity (though not used by Chart.js)
+        datasetMap.get(fileName).opacity = opacity;
         colorPreview.style.backgroundColor = hex;
         drawChart();
         modal.style.display = 'none';
       };
 
-      // Common colors (pseudo-eye dropper)
-      modal.querySelectorAll('.color-swatch').forEach(swatch => {
-        swatch.addEventListener('click', () => {
-          updateColor(swatch.dataset.color);
-          // Update inputs
-          const hex = swatch.dataset.color;
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
-          const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
-          const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
-          hexInput.value = hex;
-          rgbSliders[0].value = r;
-          rgbSliders[1].value = g;
-          rgbSliders[2].value = b;
-          rgbNumbers[0].value = r;
-          rgbNumbers[1].value = g;
-          rgbNumbers[2].value = b;
-        });
-      });
+      // Native color picker
+      // Native color picker
+      const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
+
+      // 監聽兩種事件
+      const updateFromNativeInput = () => {
+        updateColor(nativeColorInput.value);
+        // Update HEX & RGB tab inputs to reflect the selected color
+        const hex = nativeColorInput.value;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
+        const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
+        const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+        const livePreview = modal.querySelector(`#${modalId}-hexrgb .live-preview`);
+        hexInput.value = hex;
+        rgbSliders[0].value = r;
+        rgbSliders[1].value = g;
+        rgbSliders[2].value = b;
+        rgbNumbers[0].value = r;
+        rgbNumbers[1].value = g;
+        rgbNumbers[2].value = b;
+        livePreview.style.backgroundColor = hex;
+        livePreview.style.opacity = 1;
+      };
+
+      // 同時監聽 input 和 change 事件
+      nativeColorInput.addEventListener('input', updateFromNativeInput);
+      nativeColorInput.addEventListener('change', updateFromNativeInput);
+
+      // ... (color-swatch, hexrgb input event listeners remain unchanged)
 
       // HEX & RGB inputs
       const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
