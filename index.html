@@ -1118,9 +1118,12 @@
           const hv = HV[name].toFixed(4);
           const gd = formatScientific(GD[name], 2);
           const igd = formatScientific(IGD[name], 2);
+          const hv_value = HV[name].toFixed(20);
+          const gd_value = GD[name].toFixed(20);
+          const igd_value = IGD[name].toFixed(20);
 
           // Only show HV, GD, and IGD in the simplified output
-          output += `${name}\nHV: ${hv}\nGD: ${gd}\nIGD: ${igd}\n\n`;
+          output += `${name}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
         }
 
         const panel = document.getElementById('metricsOutput');
