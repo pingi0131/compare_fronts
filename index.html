@@ -6,22 +6,19 @@
   <title>fronts' compare & metrics</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+
   <script>
     // 偵測是否為舊瀏覽器（缺少 ES6 關鍵功能）
-    if (!window.Promise || !Array.prototype.find) { // 這裡以 Promise 和 Array.prototype.find 為代表特徵
+    if (!window.Promise || !Array.prototype.find) {
       var s = document.createElement('script');
       s.src = 'https://polyfill.io/v3/polyfill.min.js?features=es6';
-      s.defer = true; // 加上 defer，避免阻塞畫面渲染
+      s.defer = true;
       document.head.appendChild(s);
     }
   </script>
-
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <!-- 添加 KD-Tree 函數庫 -->
   <script>
-    // 將 KD-Tree 實現直接內嵌到頁面
-    // 基於 https://github.com/ubilabs/kd-tree-javascript
+    // KD-Tree implementation (unchanged)
     (function (root, factory) {
       if (typeof define === 'function' && define.amd) {
         define(['exports'], factory);
@@ -38,45 +35,35 @@
         this.parent = parent;
         this.dimension = dimension;
       }
-
       function kdTree(points, metric, dimensions) {
         var self = this;
-
         function buildTree(points, depth, parent) {
           var dim = depth % dimensions.length,
             median,
             node;
-
           if (points.length === 0) {
             return null;
           }
           if (points.length === 1) {
             return new Node(points[0], dim, parent);
           }
-
           points.sort(function (a, b) {
             return a[dimensions[dim]] - b[dimensions[dim]];
           });
-
           median = Math.floor(points.length / 2);
           node = new Node(points[median], dim, parent);
           node.left = buildTree(points.slice(0, median), depth + 1, node);
           node.right = buildTree(points.slice(median + 1), depth + 1, node);
-
           return node;
         }
-
         this.root = buildTree(points, 0, null);
-
         this.nearest = function (point, maxNodes, maxDistance) {
           var i,
             result,
             bestNodes;
-
           bestNodes = new BinaryHeap(
             function (e) { return -e[1]; }
           );
-
           function nearestSearch(node) {
             var bestChild,
               dimension = dimensions[node.dimension],
@@ -85,14 +72,12 @@
               linearDistance,
               otherChild,
               i;
-
             function saveNode(node, distance) {
               bestNodes.push([node, distance]);
               if (bestNodes.size() > maxNodes) {
                 bestNodes.pop();
               }
             }
-
             for (i = 0; i < dimensions.length; i += 1) {
               if (i === node.dimension) {
                 linearPoint[dimensions[i]] = point[dimensions[i]];
@@ -100,16 +85,13 @@
                 linearPoint[dimensions[i]] = node.obj[dimensions[i]];
               }
             }
-
             linearDistance = metric(linearPoint, node.obj);
-
             if (node.right === null && node.left === null) {
               if (bestNodes.size() < maxNodes || ownDistance < bestNodes.peek()[1]) {
                 saveNode(node.obj, ownDistance);
               }
               return;
             }
-
             if (node.right === null) {
               bestChild = node.left;
             } else if (node.left === null) {
@@ -121,13 +103,10 @@
                 bestChild = node.right;
               }
             }
-
             nearestSearch(bestChild);
-
             if (bestNodes.size() < maxNodes || ownDistance < bestNodes.peek()[1]) {
               saveNode(node.obj, ownDistance);
             }
-
             if (bestNodes.size() < maxNodes || Math.abs(linearDistance) < bestNodes.peek()[1]) {
               if (bestChild === node.left) {
                 otherChild = node.right;
@@ -139,19 +118,15 @@
               }
             }
           }
-
           if (maxDistance) {
             for (i = 0; i < maxNodes; i += 1) {
               bestNodes.push([null, maxDistance]);
             }
           }
-
           if (self.root) {
             nearestSearch(self.root);
           }
-
           result = [];
-
           for (i = 0; i < Math.min(maxNodes, bestNodes.content.length); i += 1) {
             if (bestNodes.content[i][0]) {
               result.push([bestNodes.content[i][0], bestNodes.content[i][1]]);
@@ -160,18 +135,15 @@
           return result;
         };
       }
-
       function BinaryHeap(scoreFunction) {
         this.content = [];
         this.scoreFunction = scoreFunction;
       }
-
       BinaryHeap.prototype = {
         push: function (element) {
           this.content.push(element);
           this.bubbleUp(this.content.length - 1);
         },
-
         pop: function () {
           var result = this.content[0];
           var end = this.content.pop();
@@ -181,15 +153,12 @@
           }
           return result;
         },
-
         peek: function () {
           return this.content[0];
         },
-
         size: function () {
           return this.content.length;
         },
-
         bubbleUp: function (n) {
           var element = this.content[n],
             score = this.scoreFunction(element);
@@ -204,12 +173,10 @@
             n = parentN;
           }
         },
-
         sinkDown: function (n) {
           var length = this.content.length,
             element = this.content[n],
             elemScore = this.scoreFunction(element);
-
           while (true) {
             var child2N = (n + 1) * 2,
               child1N = child2N - 1;
@@ -222,7 +189,6 @@
                 swap = child1N;
               }
             }
-
             if (child2N < length) {
               var child2 = this.content[child2N],
                 child2Score = this.scoreFunction(child2);
@@ -230,29 +196,24 @@
                 swap = child2N;
               }
             }
-
             if (swap === null) {
               break;
             }
-
             this.content[n] = this.content[swap];
             this.content[swap] = element;
             n = swap;
           }
         }
       };
-
       exports.kdTree = kdTree;
       exports.BinaryHeap = BinaryHeap;
     }));
   </script>
-
   <script>
     window.MathJax = {
-      chtml: { scale: 1.5 } // 放大 200%
+      chtml: { scale: 1.5 }
     };
   </script>
-
   <style>
     body {
       font-family: '標楷體', 'Times New Roman', serif;
@@ -264,11 +225,8 @@
       max-width: 960px;
       aspect-ratio: 16 / 10;
       margin: 20px auto 0;
-      /* 預設不居中，只有垂直方向有間距 */
       display: none;
-      /* 預設不顯示圖表 */
     }
-
 
     canvas {
       width: 100% !important;
@@ -277,9 +235,7 @@
 
     h1 {
       margin-top: 0px;
-      /* 調整這個數值來控制距離上方的空白 */
       margin-bottom: 20px;
-      /* 如果需要控制下方的距離可以修改這裡 */
     }
 
     .controls,
@@ -290,7 +246,6 @@
 
     .controls input[type="file"] {
       font-size: 18px;
-      /* 放大檔案選擇按鈕 */
     }
 
     .range-controls label,
@@ -298,80 +253,49 @@
     .range-controls button {
       font-size: 18px;
       font-family: "標楷體", "PMingLiU", serif;
-      /* 標楷體常用的字體名稱是 PMingLiU */
       font-weight: bold;
     }
 
-    /* 按鈕樣式 */
     .reset-range-btn {
       background-image: url('./png/reset.png');
-      /* 設置圖片路徑 */
       background-size: 130%;
-      /* 調整圖片大小，根據需要調整比例 */
       background-repeat: no-repeat;
       background-position: center;
       width: 30px;
       height: 30px;
       border: none;
-      /* 去掉預設邊框 */
       outline: none;
-      /* 去掉按鈕的輪廓 */
       padding: 0;
-      /* 去掉內邊距 */
       margin: 0;
-      /* 去掉外邊距 */
       cursor: pointer;
-      /* 滑鼠移動到按鈕時變成手形 */
       position: relative;
-      /* 使用相對定位以便顯示文字 */
       display: inline-block;
-      /* 讓按鈕和圖片並排顯示 */
       background-color: transparent;
-      /* 背景設為透明，確保圖片顯示清晰 */
       vertical-align: middle;
-      /* 垂直對齊到中間 */
     }
 
-
-    /* 按鈕懸停顯示文字 */
     .reset-range-btn:hover::after {
       content: "reset";
-      /* 設定懸停顯示的文字 */
       position: absolute;
-      /* 絕對定位 */
       top: 100%;
-      /* 文字顯示在按鈕下方 */
       left: 50%;
-      /* 文字居中 */
       transform: translateX(-50%);
-      /* 精確居中對齊 */
       font-size: 20px;
-      /* 設定文字大小 */
       color: black;
-      /* 文字顏色 */
       padding: 5px;
       background-color: white;
-      /* 背景顏色 */
       border-radius: 5px;
-      /* 設定邊角圓滑 */
       box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-      /* 增加陰影效果 */
       white-space: nowrap;
-      /* 防止文字換行 */
     }
 
-
-    /* 按下時的效果 */
     .reset-range-btn:active {
       transform: scale(0.9);
-      /* 按下時稍微縮小 */
     }
 
     .tilde {
       font-size: 1.5em;
-      /* 放大 ~ 符號 */
       vertical-align: middle;
-      /* 垂直對齊中間 */
     }
 
     .file-entry {
@@ -384,10 +308,8 @@
 
     .math-label {
       font-size: 28px;
-      /* 放大字體大小 */
     }
 
-    input[type="color"],
     input[type="text"],
     input[type="number"] {
       padding: 2px 4px;
@@ -398,9 +320,7 @@
       padding: 2px 4px;
       font-size: 0.9em;
       height: 30px;
-      /* 設定input高度和按鈕相同 */
       vertical-align: middle;
-      /* 讓input垂直對齊 */
     }
 
     button {
@@ -439,7 +359,6 @@
       font-size: 16px;
       text-align: center;
       table-layout: fixed;
-      /* 確保等寬 */
       width: 100%;
     }
 
@@ -448,11 +367,8 @@
       padding: 10px;
       border: 1px solid #ccc;
       overflow: hidden;
-      /* 防止內容溢出 */
       text-overflow: ellipsis;
-      /* 長內容顯示省略號 */
       white-space: nowrap;
-      /* 防止換行 */
     }
 
     #metricsTable th {
@@ -460,23 +376,18 @@
       font-weight: bold;
     }
 
-    /* 等寬設置：每欄均分寬度 */
     #metricsTable th,
     #metricsTable td {
       width: calc(100% / 7);
-      /* 7 欄均分 */
     }
 
-    /* 紅色高亮樣式 */
     #metricsTable td.best {
       color: red;
       font-weight: bold;
     }
 
-    /* 共前緣行樣式 */
     #metricsTable tr.combined-front {
       background-color: #e0f0ff;
-      /* 淺藍色背景區分共前緣 */
       font-weight: bold;
     }
 
@@ -487,13 +398,149 @@
     #metricsTable tbody tr:hover {
       background-color: #e0e0e0;
     }
+
+    /* Custom Color Picker Modal Styles */
+    .color-picker-modal {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      padding: 10px;
+      border-radius: 5px;
+      width: 250px;
+    }
+
+    .color-picker-tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    .color-picker-tabs button {
+      flex: 1;
+      padding: 5px;
+      background: #f0f0f0;
+      color: #333333;
+      /* Darker text for contrast */
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .color-picker-tabs button.active {
+      background: #007BFF;
+      /* Blue background for active tab */
+      color: white;
+      /* White text for contrast */
+      border-bottom: 2px solid #0056b3;
+      /* Darker blue border */
+    }
+
+    .color-picker-tabs button:hover {
+      background: #d0d0d0;
+      /* Slightly darker hover for better contrast */
+      color: #000000;
+    }
+
+    .color-picker-content {
+      display: none;
+    }
+
+    .color-picker-content.active {
+      display: block;
+    }
+
+    .common-colors {
+      display: grid;
+      grid-template-columns: repeat(5, 40px);
+      gap: 5px;
+    }
+
+    .color-swatch {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .color-swatch:hover {
+      border-color: #000;
+    }
+
+    .hexrgb-inputs {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hexrgb-inputs label {
+      font-size: 14px;
+      display: grid;
+      grid-template-columns: 60px 100px 60px;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .hexrgb-inputs input.rgb-slider,
+    .hexrgb-inputs input.opacity-slider {
+      width: 100%;
+    }
+
+    .hexrgb-inputs input.rgb-number,
+    .hexrgb-inputs input.opacity-number {
+      width: 50px;
+      padding: 3px;
+      font-size: 14px;
+    }
+
+    .hexrgb-inputs input.hex-input {
+      width: 100%;
+      padding: 5px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .hexrgb-inputs .confirm-btn {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+      justify-self: center;
+    }
+
+    .hexrgb-inputs .confirm-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .rgb-inputs input {
+      width: 60px;
+      padding: 3px;
+      font-size: 14px;
+    }
+
+    .color-preview-box {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #ccc;
+      display: inline-block;
+      vertical-align: middle;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .color-preview-box:hover {
+      border-color: #000;
+    }
   </style>
 </head>
 
 <body>
   <h1>多檔前緣比較圖 指標計算</h1>
-
-  <!-- 座標區間設定 -->
   <div class="range-controls">
     <label class="math-label">\( f_1(x) \)</label>
     <input type="number" id="minRisk" placeholder="Min" step="1">
@@ -501,24 +548,22 @@
     <span class="tilde">-</span>
     <input type="number" id="maxRisk" placeholder="Max" step="1">
     <button class="reset-range-btn" onclick="resetField('maxRisk')"></button>
-    &nbsp;&nbsp;
+      
     <label>\( f_2(x) \)</label>
     <input type="number" id="minProfit" placeholder="Min" step="1">
     <button class="reset-range-btn" onclick="resetField('minProfit')"></button>
     <span class="tilde">-</span>
     <input type="number" id="maxProfit" placeholder="Max" step="1">
     <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
-    &nbsp;&nbsp;
+      
     <button class="reset-btn" onclick="resetAllRanges()">All</button>
   </div>
-
   <div class="controls">
     <label>選擇 CSV 檔案：</label>
     <input type="file" id="csvFileInput" accept=".csv" multiple />
   </div>
-
   <div id="fileListContainer" class="controls"></div>
-  <button class="reset-btn" onclick="resetColors()">重置所有顏色</button>
+  <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
   <div id="chart-container">
     <canvas id="riskProfitChart"></canvas>
   </div>
@@ -541,98 +586,77 @@
       <tbody></tbody>
     </table>
   </div>
-
   <script>
     let chartInstance = null;
     const datasetMap = new Map();
     const defaultColors = ['#0000FF', '#FFA500', '#888888', '#FF0000', '#00AA00'];
-    let combinedFront = null; // 用於存儲計算得到的共前緣
-
+    let combinedFront = null;
     const minRiskInput = document.getElementById('minRisk');
     const maxRiskInput = document.getElementById('maxRisk');
     const minProfitInput = document.getElementById('minProfit');
     const maxProfitInput = document.getElementById('maxProfit');
-
     const defaultRanges = {
       minRisk: undefined,
       maxRisk: undefined,
       minProfit: undefined,
       maxProfit: undefined
     };
-
     [minRiskInput, maxRiskInput, minProfitInput, maxProfitInput].forEach(input => {
       input.addEventListener('blur', drawChart);
       input.addEventListener('keypress', e => { if (e.key === 'Enter') drawChart(); });
     });
-
     function resetField(fieldId) {
       document.getElementById(fieldId).value = defaultRanges[fieldId] ?? '';
-      // Only draw chart if there is data
       if (datasetMap.size > 0) {
         drawChart();
       }
     }
-
     function resetAllRanges() {
       for (const key in defaultRanges) {
         document.getElementById(key).value = defaultRanges[key] ?? '';
       }
-      // Only draw chart if there is data
       if (datasetMap.size > 0) {
         drawChart();
       }
     }
-
     function resetColors() {
       const entries = Array.from(datasetMap.entries());
-
       entries.forEach(([fileName, data], index) => {
         const newColor = defaultColors[index % defaultColors.length] || '#000000';
         data.color = newColor;
-
-        // 更新對應 input 的顏色值
         const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
         if (entryDiv) {
-          const colorInput = entryDiv.querySelector('input[type="color"]');
-          if (colorInput) colorInput.value = newColor;
+          const colorPreview = entryDiv.querySelector('.color-preview-box');
+          if (colorPreview) {
+            colorPreview.style.backgroundColor = newColor;
+          }
         }
       });
-
-      // Only draw chart if there is data
       if (datasetMap.size > 0) {
         drawChart();
       }
+      document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
     }
-
-    // Improved normalization function that matches Python implementation
     function normalize(data) {
-      // Find min and max values across all datasets
       const allRisks = Object.values(data).flatMap(d => d.risk);
       const allProfits = Object.values(data).flatMap(d => d.profit);
-
       const minRisk = Math.min(...allRisks);
-      const maxRisk = Math.max(...allRisks) * 1.01; // Add 1% margin as in Python code
-      const minProfit = Math.min(...allProfits) * 0.99; // Subtract 1% margin as in Python code
+      const maxRisk = Math.max(...allRisks) * 1.01;
+      const minProfit = Math.min(...allProfits) * 0.99;
       const maxProfit = Math.max(...allProfits);
-
       console.log(`Normalization bounds: min risk:${minRisk}, max risk:${maxRisk}, min profit:${minProfit}, max profit:${maxProfit}`);
-
       const result = {};
       for (const name in data) {
         const normalizedRisk = [];
         const normalizedProfit = [];
-
         for (let i = 0; i < data[name].risk.length; i++) {
           const risk = data[name].risk[i];
           const profit = data[name].profit[i];
-
           const newRisk = (risk - minRisk) / (maxRisk - minRisk);
           const newProfit = (profit - minProfit) / (maxProfit - minProfit);
-
           normalizedRisk.push(newRisk);
           normalizedProfit.push(newProfit);
         }
-
         result[name] = {
           risk: normalizedRisk,
           profit: normalizedProfit
@@ -640,29 +664,20 @@
       }
       return result;
     }
-
-    // Improved combined front calculation matching Python implementation
     function combineNonDominatedSets(dataSets) {
       const combinedRisk = [];
       const combinedProfit = [];
-
-      // Iterate through all datasets
       for (const [_, dataSet] of dataSets.entries()) {
         for (let i = 0; i < dataSet.data.length; i++) {
           const risk = dataSet.data[i].x;
           const profit = dataSet.data[i].y;
-
           let addNew = true;
           let j = 0;
-
           while (j < combinedRisk.length) {
-            // If current point is dominated by an existing point, don't add
             if (profit <= combinedProfit[j] && risk >= combinedRisk[j]) {
               addNew = false;
               break;
             }
-
-            // If current point dominates an existing point, remove that existing point
             if (profit > combinedProfit[j] && risk < combinedRisk[j]) {
               combinedRisk.splice(j, 1);
               combinedProfit.splice(j, 1);
@@ -670,276 +685,122 @@
               j++;
             }
           }
-
-          // If current point is not dominated by any existing point, add it
           if (addNew) {
             combinedRisk.push(risk);
             combinedProfit.push(profit);
           }
         }
       }
-
-      // Sort results by risk (ascending)
       const sortedPairs = combinedRisk.map((risk, i) => [risk, combinedProfit[i]])
         .sort((a, b) => a[0] - b[0]);
-
       const sortedRisk = sortedPairs.map(pair => pair[0]);
       const sortedProfit = sortedPairs.map(pair => pair[1]);
-
       return {
         risk: sortedRisk,
         profit: sortedProfit
       };
     }
-
     function calcGD(normalized, frontKey) {
       const result = {};
-      // Get the combined front
       const normalizedFront = {
         risk: normalized[frontKey].risk,
         profit: normalized[frontKey].profit
       };
-
       for (const name in normalized) {
         const data = normalized[name];
         let sumMin = 0.0;
-
-        // For each point in the current solution set
         for (let i = 0; i < data.risk.length; i++) {
           const risk = data.risk[i];
-          const profit = data.profit[i];
+          const profit = data.profit[i]; // Fixed: use data.profit[i]
           let minDis = Infinity;
-
-          // Find the minimum distance to any point in the reference front
           for (let j = 0; j < normalizedFront.risk.length; j++) {
             const pRisk = normalizedFront.risk[j];
             const pProfit = normalizedFront.profit[j];
             const distance = Math.sqrt(Math.pow(pRisk - risk, 2) + Math.pow(pProfit - profit, 2));
-
             if (distance < minDis) {
               minDis = distance;
             }
           }
-
           sumMin += Math.pow(minDis, 2);
         }
-
-        // GD is the square root of the sum of squared minimum distances divided by the number of points
         result[name] = Math.sqrt(sumMin) / data.risk.length;
       }
-
       return result;
     }
-
-    // IGD calculation: exact match to Python implementation
     function calcIGD(normalized, frontKey) {
       const result = {};
-      // Get the combined front
       const normalizedFront = {
         risk: normalized[frontKey].risk,
         profit: normalized[frontKey].profit
       };
-
       for (const name in normalized) {
         const data = normalized[name];
         let sumMin = 0.0;
-
-        // For each point in the reference front
         for (let j = 0; j < normalizedFront.risk.length; j++) {
           const pRisk = normalizedFront.risk[j];
           const pProfit = normalizedFront.profit[j];
           let minDis = Infinity;
-
-          // Find the minimum distance to any point in the current solution set
           for (let i = 0; i < data.risk.length; i++) {
             const risk = data.risk[i];
             const profit = data.profit[i];
             const distance = Math.sqrt(Math.pow(pRisk - risk, 2) + Math.pow(pProfit - profit, 2));
-
             if (distance < minDis) {
               minDis = distance;
             }
           }
-
           sumMin += Math.pow(minDis, 2);
         }
-
-        // IGD is the square root of the sum of squared minimum distances divided by the number of reference points
         result[name] = Math.sqrt(sumMin) / normalizedFront.risk.length;
       }
-
       return result;
     }
-
-    // HV calculation with proper reference point at (1,0)
     function calcHV(normalized) {
       const result = {};
       const refPointX = 1.0;
       const refPointY = 0.0;
-
       for (const name in normalized) {
         let hv = 0;
         const r = normalized[name].risk;
         const p = normalized[name].profit;
-
-        // Sort data points by risk (ascending)
         const sortedIndices = Array.from({ length: r.length }, (_, i) => i)
           .sort((a, b) => r[a] - r[b]);
-
         let prevProfit = refPointY;
-
         for (const idx of sortedIndices) {
           const risk = r[idx];
           const profit = p[idx];
-
-          // Calculate area contribution
           if (profit > prevProfit) {
             hv += Math.abs((refPointX - risk) * (profit - prevProfit));
             prevProfit = profit;
           }
         }
-
         result[name] = hv;
       }
       return result;
     }
-
     function calculateHitRate(normalized) {
       const hitRate = {};
-      const hitCounts = {}; // New object to store the raw counts
+      const hitCounts = {};
       const coRisk = normalized["Combined Front"].risk;
-      const numCo = coRisk.length; // Total number of points in combined front
-
+      const numCo = coRisk.length;
       for (const name in normalized) {
-        let time = 0; // Number of hits/matches
+        let time = 0;
         const otherRisk = normalized[name].risk;
-
-        // Check if each risk value is in the combined front's risk values
         for (const r of otherRisk) {
-          // Use floating point comparison, considering precision issues
           if (coRisk.some(coR => Math.abs(coR - r) < 1e-10)) {
             time += 1;
           }
         }
-
-        // Hit Rate = (matches / total points in combined front) * 100
         hitRate[name] = numCo > 0 ? (time / numCo) * 100 : 0;
-
-        // Store the raw counts for display
         hitCounts[name] = {
           hits: time,
           total: numCo
         };
       }
-
       return {
         percentages: hitRate,
         counts: hitCounts
       };
     }
-
-    // 按鈕點擊事件
-    document.getElementById('showTableBtn').addEventListener('click', () => {
-      // 檢查前緣數量
-      if (datasetMap.size < 2) {
-        alert('請至少上傳兩個前緣檔案以顯示指標表格！');
-        return;
-      }
-
-      // 檢查是否所有前緣都有名稱
-      if (!checkAllNames()) {
-        alert('請先為所有前緣輸入名稱！');
-        return;
-      }
-
-      // 重新計算指標並生成表格
-      calculateMetrics();
-      generateMetricsTable();
-    });
-
-    function calculateMetrics() {
-      const showTableBtn = document.getElementById('showTableBtn');
-      if (datasetMap.size < 2) {
-        document.getElementById('metricsOutput').style.display = 'none';
-        document.getElementById('metricsTableContainer').style.display = 'none';
-        showTableBtn.style.display = 'none';
-        return;
-      }
-
-      // Format raw data from datasetMap
-      const rawData = {};
-      datasetMap.forEach((value, key) => {
-        rawData[key] = {
-          risk: value.data.map(d => d.x),
-          profit: value.data.map(d => d.y)
-        };
-      });
-
-      // Calculate combined front first
-      const combinedFrontData = combineNonDominatedSets(datasetMap);
-
-      // Add combined front to raw data
-      rawData["Combined Front"] = {
-        risk: combinedFrontData.risk,
-        profit: combinedFrontData.profit
-      };
-
-      // Normalize all data including the combined front
-      const normalized = normalize(rawData);
-
-      try {
-        // Calculate metrics
-        const HV = calcHV(normalized);
-        const GD = calcGD(normalized, "Combined Front");
-        const IGD = calcIGD(normalized, "Combined Front");
-        const hitRate = calculateHitRate(normalized);
-
-        // Calculate HV Rate
-        const combinedHV = HV["Combined Front"];
-        const HVR = {};
-        for (const name in HV) {
-          HVR[name] = combinedHV > 0 ? (HV[name] / combinedHV) * 100 : 0;
-        }
-
-        let output = '';
-        for (const name of Object.keys(normalized)) {
-          const pointCount = name === "Combined Front" ? combinedFrontData.risk.length : datasetMap.get(name)?.data.length || 0;
-          const hv = HV[name].toFixed(4);
-          const gd = GD[name].toExponential(2);
-          const igd = IGD[name].toExponential(2);
-          const hvFormat = HV[name].toFixed(20);
-          const gdFormat = GD[name].toFixed(20);
-          const igdFormat = IGD[name].toFixed(20);
-          const hvRate = HVR[name].toFixed(2);
-          const hit = hitRate[name].toFixed(2);
-
-          output += `${name}\nPoints: ${pointCount}\nHV:  ${hv} (${hvFormat})\nGD:  ${gd} (${gdFormat})\nIGD: ${igd} (${igdFormat})\nHV Rate: ${hvRate}%\nHit Rate: ${hit}%\n\n`;
-        }
-
-        const panel = document.getElementById('metricsOutput');
-        panel.textContent = output.trim();
-        panel.style.display = 'block';
-        showTableBtn.style.display = 'inline-block';
-
-        // 日誌：檢查輸出的前緣數量
-        console.log(`Generated metrics for ${Object.keys(normalized).length} fronts (including Combined Front)`);
-
-        // Save calculated combined front for chart display
-        combinedFront = combinedFrontData;
-
-        // 隱藏表格直到按鈕被點擊
-        document.getElementById('metricsTableContainer').style.display = 'none';
-      } catch (e) {
-        console.error("Error calculating metrics:", e);
-        document.getElementById('metricsOutput').textContent = "Error calculating metrics: " + e.message;
-        document.getElementById('metricsOutput').style.display = 'block';
-        showTableBtn.style.display = 'none';
-        document.getElementById('metricsTableContainer').style.display = 'none';
-      }
-    }
-
-    // 檢查所有前緣是否有名稱
-    // 檢查所有前緣是否有名稱
     function checkAllNames() {
       for (const [fileName, data] of datasetMap) {
         if (!data.name.trim()) {
@@ -948,128 +809,6 @@
       }
       return true;
     }
-
-    // 解析 metricsOutput 並生成表格
-    function generateMetricsTable() {
-      // 檢查是否有足夠的前緣
-      if (!datasetMap || datasetMap.size < 2) {
-        alert('請至少上傳兩個前緣檔案以顯示指標表格！');
-        return;
-      }
-
-      // 檢查所有前緣是否有名稱
-      if (!checkAllNames()) {
-        alert('請先為所有前緣輸入名稱！');
-        return;
-      }
-
-      // 獲取原始指標數據
-      const rawData = {};
-      datasetMap.forEach((value, key) => {
-        rawData[key] = {
-          risk: value.data.map(d => d.x),
-          profit: value.data.map(d => d.y)
-        };
-      });
-
-      // 計算共前緣
-      const combinedFrontData = combineNonDominatedSets(datasetMap);
-      rawData["Combined Front"] = {
-        risk: combinedFrontData.risk,
-        profit: combinedFrontData.profit
-      };
-
-      // 標準化所有數據
-      const normalized = normalize(rawData);
-
-      // 計算所有指標
-      const HV = calcHV(normalized);
-      const GD = calcGD(normalized, "Combined Front");
-      const IGD = calcIGD(normalized, "Combined Front");
-      const hitRateResult = calculateHitRate(normalized);
-      const hitRate = hitRateResult.percentages;
-      const hitCounts = hitRateResult.counts;
-
-      // 計算 HV Rate
-      const combinedHV = HV["Combined Front"];
-      const HVR = {};
-      for (const name in HV) {
-        HVR[name] = combinedHV > 0 ? (HV[name] / combinedHV) * 100 : 0;
-      }
-
-      // 準備表格數據
-      const tableBody = document.getElementById('metricsTable').querySelector('tbody');
-      tableBody.innerHTML = ''; // 清空現有內容
-
-      // 存儲指標以找出最佳值（排除共前緣）
-      const metricsData = [];
-      let combinedFrontMetrics = null;
-
-      // 處理每個前緣的指標
-      for (const name in normalized) {
-        const pointCount = name === "Combined Front" ?
-          combinedFrontData.risk.length :
-          datasetMap.get(name)?.data.length || 0;
-
-        const data = {
-          fileName: name,
-          customName: name === "Combined Front" ? "Combined Front" : datasetMap.get(name)?.name || name,
-          points: pointCount,
-          hv: HV[name],
-          gd: GD[name],
-          igd: IGD[name],
-          hvRate: HVR[name],
-          hitRate: hitRate[name]
-        };
-
-        if (name === "Combined Front") {
-          combinedFrontMetrics = data;
-        } else {
-          metricsData.push(data);
-        }
-      }
-
-      // 找出最佳值（僅限非共前緣）
-      const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
-      const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
-      const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
-      const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
-      const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
-      const maxHitRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hitRate)) : 0;
-
-      // 生成非共前緣行
-      metricsData.forEach(data => {
-        // 安全訪問 hitCounts，提供默認值
-        const hitCount = hitCounts[data.fileName] || { hits: 0, total: 0 };
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.customName}</td>
-          <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
-          <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
-          <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
-          <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
-            ${data.hitRate.toFixed(2)}%
-            <span style="font-size: 0.7em; vertical-align: middle;">
-              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
-            </span>
-          </td>
-          <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
-          <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
-        `;
-        tableBody.appendChild(row);
-      });
-
-      // 顯示表格容器
-      document.getElementById('metricsTableContainer').style.display = 'block';
-
-      // 渲染數學表達式
-      if (window.MathJax) {
-        MathJax.typeset();
-      }
-    }
-
-    // Also, make sure the calculateMetrics function is updated to only show HV, GD, and IGD
     function calculateMetrics() {
       const showTableBtn = document.getElementById('showTableBtn');
       if (datasetMap.size < 2) {
@@ -1078,8 +817,6 @@
         showTableBtn.style.display = 'none';
         return;
       }
-
-      // Format raw data from datasetMap
       const rawData = {};
       datasetMap.forEach((value, key) => {
         rawData[key] = {
@@ -1087,21 +824,13 @@
           profit: value.data.map(d => d.y)
         };
       });
-
-      // Calculate combined front first
       const combinedFrontData = combineNonDominatedSets(datasetMap);
-
-      // Add combined front to raw data
       rawData["Combined Front"] = {
         risk: combinedFrontData.risk,
         profit: combinedFrontData.profit
       };
-
-      // Normalize all data including the combined front
       const normalized = normalize(rawData);
-
       try {
-        // Calculate metrics
         const HV = calcHV(normalized);
         const GD = calcGD(normalized, "Combined Front");
         const IGD = calcIGD(normalized, "Combined Front");
@@ -1125,16 +854,11 @@
           // Only show HV, GD, and IGD in the simplified output
           output += `${name}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
         }
-
         const panel = document.getElementById('metricsOutput');
         panel.textContent = output.trim();
         panel.style.display = 'block';
         showTableBtn.style.display = 'inline-block';
-
-        // Save calculated combined front for chart display
         combinedFront = combinedFrontData;
-
-        // Hide the table until button is clicked
         document.getElementById('metricsTableContainer').style.display = 'none';
       } catch (e) {
         console.error("Error calculating metrics:", e);
@@ -1144,11 +868,114 @@
         document.getElementById('metricsTableContainer').style.display = 'none';
       }
     }
-
-    // 按鈕點擊事件
+    function generateMetricsTable() {
+      if (!datasetMap || datasetMap.size < 2) {
+        alert('請至少上傳兩個前緣檔案以顯示指標表格！');
+        return;
+      }
+      if (!checkAllNames()) {
+        alert('請先為所有前緣輸入名稱！');
+        return;
+      }
+      const rawData = {};
+      datasetMap.forEach((value, key) => {
+        rawData[key] = {
+          risk: value.data.map(d => d.x),
+          profit: value.data.map(d => d.y)
+        };
+      });
+      const combinedFrontData = combineNonDominatedSets(datasetMap);
+      rawData["Combined Front"] = {
+        risk: combinedFrontData.risk,
+        profit: combinedFrontData.profit
+      };
+      const normalized = normalize(rawData);
+      const HV = calcHV(normalized);
+      const GD = calcGD(normalized, "Combined Front");
+      const IGD = calcIGD(normalized, "Combined Front");
+      const hitRateResult = calculateHitRate(normalized);
+      const hitRate = hitRateResult.percentages;
+      const hitCounts = hitRateResult.counts;
+      const combinedHV = HV["Combined Front"];
+      const HVR = {};
+      for (const name in HV) {
+        HVR[name] = combinedHV > 0 ? (HV[name] / combinedHV) * 100 : 0;
+      }
+      const tableBody = document.getElementById('metricsTable').querySelector('tbody');
+      tableBody.innerHTML = '';
+      const metricsData = [];
+      let combinedFrontMetrics = null;
+      for (const name in normalized) {
+        const pointCount = name === "Combined Front" ?
+          combinedFrontData.risk.length :
+          datasetMap.get(name)?.data.length || 0;
+        const data = {
+          fileName: name,
+          customName: name === "Combined Front" ? "Combined Front" : datasetMap.get(name)?.name || name,
+          points: pointCount,
+          hv: HV[name],
+          gd: GD[name],
+          igd: IGD[name],
+          hvRate: HVR[name],
+          hitRate: hitRate[name]
+        };
+        if (name === "Combined Front") {
+          combinedFrontMetrics = data;
+        } else {
+          metricsData.push(data);
+        }
+      }
+      const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
+      const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
+      const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
+      const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
+      const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
+      const maxHitRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hitRate)) : 0;
+      metricsData.forEach(data => {
+        const hitCount = hitCounts[data.fileName] || { hits: 0, total: 0 };
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${data.customName}</td>
+          <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
+          <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
+          <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
+          <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
+            ${data.hitRate.toFixed(2)}%
+            <span style="font-size: 0.7em; vertical-align: middle;">
+              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+            </span>
+          </td>
+          <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
+          <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+      if (combinedFrontMetrics) {
+        const hitCount = hitCounts[combinedFrontMetrics.fileName] || { hits: 0, total: 0 };
+        const row = document.createElement('tr');
+        row.className = 'combined-front';
+        row.innerHTML = `
+          <td>${combinedFrontMetrics.customName}</td>
+          <td>${combinedFrontMetrics.points}</td>
+          <td>${combinedFrontMetrics.hv.toFixed(4)}</td>
+          <td>${combinedFrontMetrics.hvRate.toFixed(2)}%</td>
+          <td>
+            ${combinedFrontMetrics.hitRate.toFixed(2)}%
+            <span style="font-size: 0.7em; vertical-align: middle;">
+              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+            </span>
+          </td>
+          <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
+          <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
+        `;
+        tableBody.appendChild(row);
+      }
+      document.getElementById('metricsTableContainer').style.display = 'block';
+      if (window.MathJax) {
+        MathJax.typeset();
+      }
+    }
     document.getElementById('showTableBtn').addEventListener('click', generateMetricsTable);
-
-
     document.getElementById('csvFileInput').addEventListener('change', function (e) {
       const files = Array.from(e.target.files);
       files.forEach((file, index) => {
@@ -1157,19 +984,15 @@
           const text = event.target.result;
           const lines = text.split(/\r?\n/);
           if (lines.length === 0) return;
-
           const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
           const riskIndex = headers.findIndex(h => h.includes('risk'));
           const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
           if (riskIndex === -1 || profitIndex === -1) return;
-
           const parsedSet = new Set();
           const parsed = [];
-
           for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
-            if (!line) continue; // 跳過空行
-
+            if (!line) continue;
             const cols = line.split(',');
             const x = parseFloat(cols[riskIndex]);
             const y = parseFloat(cols[profitIndex]);
@@ -1179,7 +1002,6 @@
               parsed.push({ x, y });
             }
           }
-
           if (parsed.length > 0) {
             const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
             datasetMap.set(file.name, {
@@ -1187,24 +1009,24 @@
               color
             });
             addFileEntryUI(file.name, color);
-            drawChart(); // drawChart 內會處理共前緣計算
+            drawChart();
           }
         };
         reader.readAsText(file, 'UTF-8');
       });
       e.target.value = '';
     });
-
-
     function formatScientific(number, digits) {
       const str = number.toExponential(digits);
       const parts = str.split('e');
       const coefficient = parts[0];
-      const exponentNum = parseInt(parts[1], 10); // Parse exponent as integer
+      const exponentNum = parseInt(parts[1], 10);
       const sign = exponentNum >= 0 ? '+' : '-';
-      const exponent = sign + Math.abs(exponentNum).toString().padStart(2, '0'); // Ensure two-digit exponent
+      const exponent = sign + Math.abs(exponentNum).toString().padStart(2, '0');
       return `${coefficient}E${exponent}`;
     }
+    // Add this before addFileEntryUI
+    let modalCounter = 0;
 
     function addFileEntryUI(fileName, defaultColor) {
       const container = document.getElementById('fileListContainer');
@@ -1212,15 +1034,220 @@
       entry.className = 'file-entry';
       entry.id = `entry-${CSS.escape(fileName)}`;
 
-      const colorInput = document.createElement('input');
-      colorInput.type = 'color';
-      colorInput.value = defaultColor;
-      colorInput.style.border = 'none';
-      colorInput.style.outline = 'none';
-      colorInput.addEventListener('input', () => {
-        datasetMap.get(fileName).color = colorInput.value;
-        drawChart();
+      // Create color preview box
+      const colorPreview = document.createElement('div');
+      colorPreview.className = 'color-preview-box';
+      colorPreview.style.backgroundColor = defaultColor;
+      colorPreview.title = '點擊選擇顏色';
+
+      // Generate unique modal ID
+      const modalId = `color-picker-${modalCounter++}`;
+
+      // Create modal for color picker
+      const modal = document.createElement('div');
+      modal.className = 'color-picker-modal';
+      modal.style.display = 'none';
+      modal.innerHTML = `
+    <div class="color-picker-tabs">
+      <button data-tab="common" class="active">常用顏色</button>
+      <button data-tab="hexrgb">HEX & RGB</button>
+    </div>
+    <div class="color-picker-content active" id="${modalId}-common">
+      <div class="common-colors">
+        ${[
+          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#C00000', '#00C000', '#0000C0',
+          '#FFC0CB', '#FFA500', '#800080', '#008080', '#FFD700', '#4B0082', '#F0E68C', '#E6E6FA', '#FFF0F5',
+          '#F5F5DC', '#D3D3D3', '#A9A9A9', '#696969', '#000000', '#FFFFFF'
+        ].map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')}
+      </div>
+    </div>
+    <div class="color-picker-content" id="${modalId}-hexrgb">
+  <div class="hexrgb-inputs">
+    <label>紅:
+      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
+      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
+    </label>
+    <label>綠:
+      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
+      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
+    </label>
+    <label>藍:
+      <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
+      <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
+    </label>
+    <label>十六進位:
+      <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}">
+    </label>
+    <label>不透明度:
+      <input type="range" min="0" max="1" step="0.01" value="1" class="opacity-slider">
+      <input type="number" min="0" max="1" step="0.01" value="1" class="opacity-number">
+    </label>
+    <label>預覽:
+      <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: 1;"></div>
+    </label>
+    <button class="confirm-btn">確認</button>
+  </div>
+</div>
+  `;
+
+      // Append modal to entry to ensure it's in the DOM
+      entry.appendChild(modal);
+
+      // Tab switching logic
+      const tabs = modal.querySelectorAll('.color-picker-tabs button');
+      const contents = modal.querySelectorAll('.color-picker-content');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          contents.forEach(c => c.classList.remove('active'));
+          tab.classList.add('active');
+          const content = modal.querySelector(`#${modalId}-${tab.dataset.tab}`);
+          if (content) {
+            content.classList.add('active');
+          } else {
+            console.error(`Content element #${modalId}-${tab.dataset.tab} not found`);
+          }
+        });
       });
+
+      // Color selection logic
+      const updateColor = (hex, opacity = 1) => {
+        datasetMap.get(fileName).color = hex;
+        datasetMap.get(fileName).opacity = opacity; // Store opacity (though not used by Chart.js)
+        colorPreview.style.backgroundColor = hex;
+        drawChart();
+        modal.style.display = 'none';
+      };
+
+      // Common colors (pseudo-eye dropper)
+      modal.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          updateColor(swatch.dataset.color);
+          // Update inputs
+          const hex = swatch.dataset.color;
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
+          const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
+          const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+          hexInput.value = hex;
+          rgbSliders[0].value = r;
+          rgbSliders[1].value = g;
+          rgbSliders[2].value = b;
+          rgbNumbers[0].value = r;
+          rgbNumbers[1].value = g;
+          rgbNumbers[2].value = b;
+        });
+      });
+
+      // HEX & RGB inputs
+      const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
+      const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
+      const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+      const opacitySlider = modal.querySelector(`#${modalId}-hexrgb .opacity-slider`);
+      const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
+      const confirmBtn = modal.querySelector(`#${modalId}-hexrgb .confirm-btn`);
+
+      const livePreview = modal.querySelector('.live-preview');
+
+      const updatePreview = () => {
+        const r = parseInt(rgbNumbers[0].value) || 0;
+        const g = parseInt(rgbNumbers[1].value) || 0;
+        const b = parseInt(rgbNumbers[2].value) || 0;
+        const a = parseFloat(opacityNumber.value) || 1;
+        if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+          const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          livePreview.style.backgroundColor = hex;
+          livePreview.style.opacity = a;
+        }
+      };
+
+      const updateFromHex = () => {
+        const value = hexInput.value.trim();
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          const r = parseInt(value.slice(1, 3), 16);
+          const g = parseInt(value.slice(3, 5), 16);
+          const b = parseInt(value.slice(5, 7), 16);
+          rgbSliders[0].value = r;
+          rgbSliders[1].value = g;
+          rgbSliders[2].value = b;
+          rgbNumbers[0].value = r;
+          rgbNumbers[1].value = g;
+          rgbNumbers[2].value = b;
+          updatePreview();
+        }
+      };
+
+      const updateFromRGB = () => {
+        const r = parseInt(rgbNumbers[0].value) || 0;
+        const g = parseInt(rgbNumbers[1].value) || 0;
+        const b = parseInt(rgbNumbers[2].value) || 0;
+        const a = parseFloat(opacityNumber.value) || 1;
+        if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+          const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          hexInput.value = hex;
+          rgbSliders[0].value = r;
+          rgbSliders[1].value = g;
+          rgbSliders[2].value = b;
+          updatePreview();
+        }
+      };
+
+      const syncSliderAndNumber = (slider, number) => {
+        slider.addEventListener('input', () => {
+          number.value = slider.value;
+          updateFromRGB();
+        });
+        number.addEventListener('input', () => {
+          slider.value = number.value;
+          updateFromRGB();
+        });
+        number.addEventListener('keypress', e => {
+          if (e.key === 'Enter') updateFromRGB();
+        });
+      };
+
+      syncSliderAndNumber(rgbSliders[0], rgbNumbers[0]);
+      syncSliderAndNumber(rgbSliders[1], rgbNumbers[1]);
+      syncSliderAndNumber(rgbSliders[2], rgbNumbers[2]);
+      syncSliderAndNumber(opacitySlider, opacityNumber);
+
+      hexInput.addEventListener('input', updateFromHex);
+      hexInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') updateFromHex();
+      });
+
+      // Confirm button logic
+      confirmBtn.addEventListener('click', () => {
+        const r = parseInt(rgbNumbers[0].value) || 0;
+        const g = parseInt(rgbNumbers[1].value) || 0;
+        const b = parseInt(rgbNumbers[2].value) || 0;
+        const a = parseFloat(opacityNumber.value) || 1;
+        if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+          const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          updateColor(hex, a);
+        }
+      });
+
+      // Toggle modal on preview click
+      colorPreview.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close all other modals
+        document.querySelectorAll('.color-picker-modal').forEach(m => {
+          if (m !== modal) m.style.display = 'none';
+        });
+        modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        modal.style.left = `${e.pageX}px`;
+        modal.style.top = `${e.pageY + 10}px`;
+      });
+
+      // Close modal when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!modal.contains(e.target) && e.target !== colorPreview) {
+          modal.style.display = 'none';
+        }
+      }, { once: false });
 
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
@@ -1245,20 +1272,17 @@
         drawChart();
       };
 
-      entry.appendChild(colorInput);
+      entry.appendChild(colorPreview);
       entry.appendChild(nameInput);
       entry.appendChild(document.createTextNode(fileName));
       entry.appendChild(delBtn);
       container.appendChild(entry);
+      document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
     }
-
     function drawChart() {
       const ctx = document.getElementById('riskProfitChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
-
-      // 只有當前緣數量 >= 2 時才計算共前緣
       combinedFront = datasetMap.size >= 2 ? combineNonDominatedSets(datasetMap) : null;
-
       const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name }]) => ({
         label: name || fileName,
         data: data,
@@ -1269,7 +1293,6 @@
         fill: false,
         tension: 0
       }));
-
       if (combinedFront && combinedFront.risk.length > 0) {
         const combinedData = [];
         for (let i = 0; i < combinedFront.risk.length; i++) {
@@ -1291,17 +1314,14 @@
           borderDash: [5, 5]
         });
       }
-
       const minX = parseFloat(minRiskInput.value);
       const maxX = parseFloat(maxRiskInput.value);
       const minY = parseFloat(minProfitInput.value);
       const maxY = parseFloat(maxProfitInput.value);
-
       const xMin = isNaN(minX) ? undefined : minX;
       const xMax = isNaN(maxX) ? undefined : maxX;
       const yMin = isNaN(minY) ? undefined : minY;
       const yMax = isNaN(maxY) ? undefined : maxY;
-
       chartInstance = new Chart(ctx, {
         type: 'scatter',
         data: { datasets },
@@ -1402,14 +1422,13 @@
           }
         }
       });
-
-      // 顯示圖表並讓它居中
       document.getElementById('chart-container').style.display = 'block';
       document.getElementById('chart-container').style.margin = '20px auto';
       document.getElementById('chart-container').addEventListener('dblclick', function () {
         chartInstance.resetZoom();
       });
       calculateMetrics();
+      document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
     }
   </script>
 </body>
