@@ -578,8 +578,10 @@
     <button class="reset-btn" onclick="resetAllRanges()">All</button>
   </div>
   <div class="controls">
-    <label>選擇 CSV 檔案：</label>
-    <input type="file" id="csvFileInput" accept=".csv" multiple />
+    <label>選擇年月：</label>
+    <input type="number" id="yearInput" placeholder="年份 (例如: 2024)" min="1900" max="2100" style="width: 100px;">
+    <input type="number" id="monthInput" placeholder="月份 (1-12)" min="1" max="12" style="width: 80px;">
+    <button id="loadFilesBtn">載入檔案</button>
   </div>
   <div id="fileListContainer" class="controls"></div>
   <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
@@ -610,6 +612,151 @@
     const datasetMap = new Map();
     const defaultColors = ['#0000FF', '#FFA500', '#888888', '#FF0000', '#00AA00'];
     let combinedFront = null;
+    // 新增讀取目錄檔案的函數
+    async function loadFilesFromData() {
+  const year = document.getElementById('yearInput').value;
+  const month = document.getElementById('monthInput').value;
+
+  if (!year || !month) {
+    alert('請輸入有效的年份和月份');
+    return;
+  }
+
+  // Ensure month is zero-padded (e.g., "1" becomes "01")
+  const paddedMonth = month.padStart(2, '0');
+  const pattern = `${year}_${paddedMonth}`; // e.g., "2024_01"
+
+  try {
+    // Clear existing data
+    datasetMap.clear();
+    document.getElementById('fileListContainer').innerHTML = '';
+
+    // Recursively collect all CSV files from ./data
+    const allFiles = await fetchAllFiles('./data/');
+    if (!allFiles || allFiles.length === 0) {
+      alert(`在 ./data 中找不到任何 CSV 檔案`);
+      return;
+    }
+
+    // Filter files that match the pattern and end with .csv
+    const matchingFiles = allFiles.filter(file =>
+      file.includes(pattern) && file.endsWith('.csv')
+    );
+
+    if (matchingFiles.length === 0) {
+      alert(`找不到包含 "${pattern}" 的 CSV 檔案`);
+      return;
+    }
+
+    // Load each matching file
+    for (const filePath of matchingFiles) {
+      try {
+        const fileResponse = await fetch(filePath);
+        if (!fileResponse.ok) {
+          console.error(`無法讀取檔案 ${filePath}: ${fileResponse.status}`);
+          continue;
+        }
+
+        const text = await fileResponse.text();
+        const lines = text.split(/\r?\n/);
+        if (lines.length === 0) continue;
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const riskIndex = headers.findIndex(h => h.includes('risk'));
+        const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
+
+        if (riskIndex === -1 || profitIndex === -1) continue;
+
+        const parsedSet = new Set();
+        const parsed = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const cols = line.split(',');
+          const x = parseFloat(cols[riskIndex]);
+          const y = parseFloat(cols[profitIndex]);
+          const key = `${x},${y}`;
+
+          if (!isNaN(x) && !isNaN(y) && !(x === 0 && y === 0) && !parsedSet.has(key)) {
+            parsedSet.add(key);
+            parsed.push({ x, y });
+          }
+        }
+
+        if (parsed.length > 0) {
+          const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
+          // Use the file name without the full path for display
+          const fileName = filePath.split('/').pop();
+          datasetMap.set(fileName, {
+            name: '',
+            data: parsed.sort((a, b) => a.x - b.x),
+            color
+          });
+          addFileEntryUI(fileName, color);
+        }
+      } catch (fileError) {
+        console.error(`處理檔案 ${filePath} 時發生錯誤:`, fileError);
+      }
+    }
+
+    if (datasetMap.size > 0) {
+      drawChart();
+      document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+      calculateMetrics();
+    } else {
+      alert(`沒有成功載入任何符合 "${pattern}" 的有效 CSV 檔案`);
+    }
+  } catch (error) {
+    console.error('讀取目錄時發生錯誤:', error);
+    alert(`讀取目錄時發生錯誤: ${error.message}`);
+  }
+}
+
+// Helper function to recursively fetch all files
+async function fetchAllFiles(directory) {
+  const files = [];
+
+  async function scanDirectory(dir) {
+    try {
+      const response = await fetch(dir);
+      if (!response.ok) {
+        console.warn(`無法訪問目錄 ${dir}: ${response.status}`);
+        return;
+      }
+
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const links = Array.from(doc.querySelectorAll('a'));
+
+      for (const link of links) {
+        const href = link.getAttribute('href');
+        if (!href) continue;
+
+        // Skip parent directory or current directory links
+        if (href === '../' || href === './') continue;
+
+        // Construct full path
+        const fullPath = dir.endsWith('/') ? `${dir}${href}` : `${dir}/${href}`;
+
+        if (href.endsWith('/')) {
+          // It's a subdirectory, recurse
+          await scanDirectory(fullPath);
+        } else if (href.endsWith('.csv')) {
+          // It's a CSV file, add to list
+          files.push(fullPath);
+        }
+      }
+    } catch (err) {
+      console.warn(`掃描目錄 ${dir} 時發生錯誤:`, err);
+    }
+  }
+
+  await scanDirectory(directory);
+  return files;
+}
     const minRiskInput = document.getElementById('minRisk');
     const maxRiskInput = document.getElementById('maxRisk');
     const minProfitInput = document.getElementById('minProfit');
@@ -995,46 +1142,8 @@
       }
     }
     document.getElementById('showTableBtn').addEventListener('click', generateMetricsTable);
-    document.getElementById('csvFileInput').addEventListener('change', function (e) {
-      const files = Array.from(e.target.files);
-      files.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          const text = event.target.result;
-          const lines = text.split(/\r?\n/);
-          if (lines.length === 0) return;
-          const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-          const riskIndex = headers.findIndex(h => h.includes('risk'));
-          const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
-          if (riskIndex === -1 || profitIndex === -1) return;
-          const parsedSet = new Set();
-          const parsed = [];
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            const cols = line.split(',');
-            const x = parseFloat(cols[riskIndex]);
-            const y = parseFloat(cols[profitIndex]);
-            const key = `${x},${y}`;
-            if (!isNaN(x) && !isNaN(y) && !(x === 0 && y === 0) && !parsedSet.has(key)) {
-              parsedSet.add(key);
-              parsed.push({ x, y });
-            }
-          }
-          if (parsed.length > 0) {
-            const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
-            datasetMap.set(file.name, {
-              name: '', data: parsed.sort((a, b) => a.x - b.x),
-              color
-            });
-            addFileEntryUI(file.name, color);
-            drawChart();
-          }
-        };
-        reader.readAsText(file, 'UTF-8');
-      });
-      e.target.value = '';
-    });
+    // 替換為載入按鈕的事件監聽器
+document.getElementById('loadFilesBtn').addEventListener('click', loadFilesFromData);
     function formatScientific(number, digits) {
       const str = number.toExponential(digits);
       const parts = str.split('e');
