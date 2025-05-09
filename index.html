@@ -632,7 +632,7 @@
     document.getElementById('fileListContainer').innerHTML = '';
 
     // Recursively collect all CSV files from ./data
-    const allFiles = await fetchAllFiles('./');
+    const allFiles = await fetchAllFiles('./data/');
     if (!allFiles || allFiles.length === 0) {
       alert(`在 ./data 中找不到任何 CSV 檔案`);
       return;
