@@ -226,14 +226,34 @@
         .sidebar {
             width: 100px;
             height: calc(100vh - 56px);
-            /* Full height minus padding */
             overflow-y: auto;
             background-color: #f0f0f0;
             border-left: 1px solid #ccc;
             padding: 10px;
             position: fixed;
+            right: -100px;
+            /* Hidden by default */
+            top: 28px;
+            transition: right 0.3s ease;
+            /* Smooth sliding */
+            z-index: 1000;
+        }
+
+        .sidebar.visible {
+            right: 0;
+            /* Visible when hovered */
+        }
+
+        .sidebar-trigger {
+            position: fixed;
             right: 0;
             top: 28px;
+            width: 20px;
+            /* Trigger area */
+            height: calc(100vh - 56px);
+            background: transparent;
+            z-index: 1001;
+            cursor: pointer;
         }
 
         .date-entry {
@@ -257,9 +277,9 @@
 
         /* Main content */
         .main-content {
-            margin-right: 170px;
-            /* Sidebar width + padding */
-            width: calc(100% - 170px);
+            margin-right: 20px;
+            /* Space for trigger */
+            width: calc(100% - 20px);
         }
 
         #chart-container {
@@ -592,6 +612,7 @@
 </head>
 
 <body>
+    <div class="sidebar-trigger" id="sidebarTrigger"></div>
     <div class="sidebar" id="dateSidebar">
         <!-- Date entries will be populated by JavaScript -->
     </div>
@@ -681,9 +702,35 @@
                 sidebar.appendChild(entry);
             });
         }
+        function initializeSidebarHover() {
+            const sidebar = document.getElementById('dateSidebar');
+            const trigger = document.getElementById('sidebarTrigger');
 
+            trigger.addEventListener('mouseenter', () => {
+                sidebar.classList.add('visible');
+            });
+
+            sidebar.addEventListener('mouseenter', () => {
+                sidebar.classList.add('visible');
+            });
+
+            sidebar.addEventListener('mouseleave', (e) => {
+                if (!e.relatedTarget || (e.relatedTarget !== trigger && !trigger.contains(e.relatedTarget))) {
+                    sidebar.classList.remove('visible');
+                }
+            });
+
+            trigger.addEventListener('mouseleave', (e) => {
+                if (!e.relatedTarget || (e.relatedTarget !== sidebar && !sidebar.contains(e.relatedTarget))) {
+                    sidebar.classList.remove('visible');
+                }
+            });
+        }
         // Call populateDateSidebar when the page loads
-        document.addEventListener('DOMContentLoaded', populateDateSidebar);
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDateSidebar();
+            initializeSidebarHover();
+        });
 
         // Modified loadFilesFromDataDir to accept year and month parameters
         async function loadFilesFromDataDir(year, month) {
@@ -749,13 +796,15 @@
                             const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
                             const fileName = filePath.split('/').pop();
                             // Extract folder name and simplify file name
-                            const folder = filePath.split('/')[0].replace('%28M2M%29', '(M2M)'); // Handle NSGA-II%28M2M%29
-                            const simplifiedFileName = `${folder}_${year}_${paddedMonth}_front.csv`;
+                            const folder = filePath.split('/')[0].replace('%28M2M%29', '(M2M)');
+                            // Use MOEA/D for display instead of MOEAD
+                            const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
+                            const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
-                                name: folder, // Use folder as default name
+                                name: displayFolder, // e.g., MOEA/D
                                 data: parsed.sort((a, b) => a.x - b.x),
                                 color,
-                                simplifiedName: simplifiedFileName // Store simplified name for UI
+                                simplifiedName: simplifiedFileName // e.g., MOEA/D_2023_03_front.csv
                             });
                             addFileEntryUI(fileName, color);
                         }
@@ -1107,8 +1156,7 @@
                     datasetMap.get(name)?.data.length || 0;
                 const data = {
                     fileName: name,
-                    customName: name === "Combined Front" ? "Combined" : datasetMap.get(name)?.name || name,
-                    points: pointCount,
+                    customName: name === "Combined Front" ? "Combined" : datasetMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'), points: pointCount,
                     hv: HV[name],
                     gd: GD[name],
                     igd: IGD[name],
