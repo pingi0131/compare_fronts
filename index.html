@@ -1505,7 +1505,7 @@
                 showLine: true,
                 fill: false,
                 tension: 0,
-                dragData: false // Enable dragging
+                dragData: false
             }));
             if (combinedFront && combinedFront.risk.length > 0) {
                 const combinedData = [];
@@ -1526,7 +1526,7 @@
                     tension: 0,
                     borderWidth: 2,
                     borderDash: [5, 5],
-                    dragData: false // Disable dragging for Combined Front
+                    dragData: false
                 });
             }
             const minX = parseFloat(minRiskInput.value);
@@ -1537,6 +1537,17 @@
             const xMax = isNaN(maxX) ? undefined : maxX;
             const yMin = isNaN(minY) ? undefined : minY;
             const yMax = isNaN(maxY) ? undefined : maxY;
+
+            // Get selected date and format title
+            const selectedDate = document.querySelector('.date-entry.selected');
+            let title = 'Compared of Multiple Algorithms';
+            if (selectedDate) {
+                const year = selectedDate.dataset.year;
+                const month = selectedDate.dataset.month;
+                const monthNames = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+                const monthName = monthNames[parseInt(month, 10) - 1] || 'Unknown';
+                title = `Compared of Multiple Algorithms in ${monthName} ${year}`;
+            }
             chartInstance = new Chart(ctx, {
                 type: 'scatter',
                 data: { datasets },
@@ -1546,7 +1557,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Compared of Multiple Algorithms',
+                            text: title, // Dynamic title with date
                             font: {
                                 family: 'Times New Roman',
                                 size: 32,
