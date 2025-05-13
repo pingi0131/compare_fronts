@@ -1126,7 +1126,7 @@
             const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
 
             if (filteredMap.size < 2) {
-                document.getElementById('metricsOutput').textContent = '過濾後資料不足，需至少兩個前緣進行指標計算';
+                document.getElementById('metricsOutput').textContent = '設定的風險報酬範圍沒有解，確認放大區域數值設定';
                 document.getElementById('metricsOutput').style.display = 'block';
                 document.getElementById('metricsTableContainer').style.display = 'none';
                 showTableBtn.style.display = 'none';
@@ -1206,7 +1206,7 @@
             const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
 
             if (filteredMap.size < 2) {
-                alert('過濾後資料不足，需至少兩個前緣進行指標計算');
+                alert('設定的風險報酬範圍沒有解，確認放大區域數值設定');
                 return;
             }
 
