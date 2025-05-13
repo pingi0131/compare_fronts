@@ -224,14 +224,18 @@
 
         /* Sidebar styles */
         .sidebar {
-            width: 100px;
+            width: 110px;
             height: calc(100vh - 56px);
             overflow-y: auto;
             background-color: #f0f0f0;
+            border-top: 1px solid #ccc;
+            /* 添加上邊框 */
+            border-bottom: 1px solid #ccc;
+            /* 添加下邊框 */
             border-left: 1px solid #ccc;
             padding: 10px;
             position: fixed;
-            right: -100px;
+            right: -110px;
             /* Hidden by default */
             top: 28px;
             transition: right 0.3s ease;
@@ -257,22 +261,30 @@
         }
 
         .date-entry {
-            padding: 8px;
+            padding: 9px;
             cursor: pointer;
             border-radius: 4px;
             margin-bottom: 4px;
-            font-size: 16px;
+            font-size: 20px;
+            /* 默認字體大小 */
             text-align: center;
         }
 
         .date-entry:hover {
             background-color: #e0e0e0;
+            font-size: 21px;
+            /* 懸停時略微放大 */
+        }
+
+        .date-entry:active {
+            transform: scale(0.9);
         }
 
         .date-entry.selected {
             background-color: #007BFF;
             color: white;
             font-weight: bold;
+            font-size: 20px;
         }
 
         /* Main content */
@@ -641,7 +653,7 @@
             <canvas id="riskProfitChart"></canvas>
         </div>
         <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
-        <button id="showTableBtn" class="reset-btn" style="display: none;">顯示統整好看表格</button>
+        <button id="showTableBtn" class="reset-btn" style="display: none; font-size: 14px;">精緻表格</button>
         <div id="metricsTableContainer" style="display: none; margin-top: 20px;">
             <table id="metricsTable" border="1"
                 style="border-collapse: collapse; width: 100%; max-width: 960px; margin: 0 auto;">
