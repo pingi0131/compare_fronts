@@ -595,7 +595,7 @@
             font-size: 14px;
         }
 
-        .color-preview-box {
+        .color-preview-box-list {
             width: 30px;
             height: 30px;
             border: 1px solid #ccc;
@@ -605,7 +605,7 @@
             border-radius: 3px;
         }
 
-        .color-preview-box:hover {
+        .color-preview-box-list:hover {
             border-color: #000;
         }
     </style>
@@ -665,6 +665,29 @@
         const datasetMap = new Map();
         const defaultColors = ['#0000FF', '#FFA500', '#888888', '#00AA00'];
         let combinedFront = null;
+
+        function filterDataByRange(dataMap, minRisk, maxRisk, minProfit, maxProfit) {
+            const filteredMap = new Map();
+            dataMap.forEach((value, fileName) => {
+                const filteredData = value.data.filter(point => {
+                    const x = point.x;
+                    const y = point.y;
+                    return (
+                        (isNaN(minRisk) || x >= minRisk) &&
+                        (isNaN(maxRisk) || x <= maxRisk) &&
+                        (isNaN(minProfit) || y >= minProfit) &&
+                        (isNaN(maxProfit) || y <= maxProfit)
+                    );
+                });
+                if (filteredData.length > 0) {
+                    filteredMap.set(fileName, {
+                        ...value,
+                        data: filteredData
+                    });
+                }
+            });
+            return filteredMap;
+        }
 
         // Generate date list (2023_01 to 2025_04)
         function generateDateList() {
@@ -798,7 +821,7 @@
                             const folder = filePath.split('/')[0].replace('%28M2M%29', '(M2M)');
                             // Use MOEA/D for display instead of MOEAD
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size -1 % defaultColors.length] || '#000000';
+                            const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000';
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
                                 name: displayFolder, // e.g., MOEA/D
@@ -837,14 +860,36 @@
             maxProfit: undefined
         };
         [minRiskInput, maxRiskInput, minProfitInput, maxProfitInput].forEach(input => {
-            input.addEventListener('blur', drawChart);
-            input.addEventListener('keypress', e => { if (e.key === 'Enter') drawChart(); });
+            input.addEventListener('blur', () => {
+                if (datasetMap.size > 0) {
+                    drawChart();
+                    calculateMetrics();
+                    // If table is visible, regenerate it
+                    if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                        generateMetricsTable();
+                    }
+                }
+            });
+            input.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && datasetMap.size > 0) {
+                    drawChart();
+                    calculateMetrics();
+                    // If table is visible, regenerate it
+                    if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                        generateMetricsTable();
+                    }
+                }
+            });
         });
 
         function resetField(fieldId) {
             document.getElementById(fieldId).value = defaultRanges[fieldId] ?? '';
             if (datasetMap.size > 0) {
                 drawChart();
+                calculateMetrics();
+                if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                    generateMetricsTable();
+                }
             }
         }
 
@@ -854,6 +899,10 @@
             }
             if (datasetMap.size > 0) {
                 drawChart();
+                calculateMetrics();
+                if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                    generateMetricsTable();
+                }
             }
         }
 
@@ -861,15 +910,15 @@
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
                 // Reassign #FF0000 for MoQTS, defaultColors for others
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA') ? '#FF0000' : defaultColors[index % defaultColors.length] || '#000000';
+                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
                 data.color = newColor;
-                data.opacity = 0.6; // Reset opacity
+                //data.opacity = 0.6; // Reset opacity
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
                 if (entryDiv) {
-                    const colorPreview = entryDiv.querySelector('.color-preview-box');
+                    const colorPreview = entryDiv.querySelector('.color-preview-box-list');
                     if (colorPreview) {
                         colorPreview.style.backgroundColor = newColor;
-                        colorPreview.style.opacity = 0.6;
+                        //colorPreview.style.opacity = 0.6;
                     }
                 }
             });
@@ -1066,19 +1115,40 @@
                 showTableBtn.style.display = 'none';
                 return;
             }
+
+            // Get range inputs
+            const minRisk = parseFloat(minRiskInput.value);
+            const maxRisk = parseFloat(maxRiskInput.value);
+            const minProfit = parseFloat(minProfitInput.value);
+            const maxProfit = parseFloat(maxProfitInput.value);
+
+            // Filter data based on ranges
+            const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
+
+            if (filteredMap.size < 2) {
+                document.getElementById('metricsOutput').textContent = '過濾後資料不足，需至少兩個前緣進行指標計算';
+                document.getElementById('metricsOutput').style.display = 'block';
+                document.getElementById('metricsTableContainer').style.display = 'none';
+                showTableBtn.style.display = 'none';
+                return;
+            }
+
             const rawData = {};
-            datasetMap.forEach((value, key) => {
+            filteredMap.forEach((value, key) => {
                 rawData[key] = {
                     risk: value.data.map(d => d.x),
                     profit: value.data.map(d => d.y)
                 };
             });
-            const combinedFrontData = combineNonDominatedSets(datasetMap);
+
+            const combinedFrontData = combineNonDominatedSets(filteredMap);
             rawData["Combined Front"] = {
                 risk: combinedFrontData.risk,
                 profit: combinedFrontData.profit
             };
+
             const normalized = normalize(rawData);
+
             try {
                 const HV = calcHV(normalized);
                 const GD = calcGD(normalized, "Combined Front");
@@ -1097,10 +1167,10 @@
                     const hv_value = HV[name].toFixed(20);
                     const gd_value = GD[name].toFixed(20);
                     const igd_value = IGD[name].toFixed(20);
-                    // Use simplifiedName from datasetMap
-                    const displayName = datasetMap.get(name)?.simplifiedName || name;
+                    const displayName = filteredMap.get(name)?.simplifiedName || name;
                     output += `${displayName}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
                 }
+
                 const panel = document.getElementById('metricsOutput');
                 panel.textContent = output.trim();
                 panel.style.display = 'block';
@@ -1125,18 +1195,35 @@
                 alert('請先為所有前緣輸入名稱！');
                 return;
             }
+
+            // Get range inputs
+            const minRisk = parseFloat(minRiskInput.value);
+            const maxRisk = parseFloat(maxRiskInput.value);
+            const minProfit = parseFloat(minProfitInput.value);
+            const maxProfit = parseFloat(maxProfitInput.value);
+
+            // Filter data based on ranges
+            const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
+
+            if (filteredMap.size < 2) {
+                alert('過濾後資料不足，需至少兩個前緣進行指標計算');
+                return;
+            }
+
             const rawData = {};
-            datasetMap.forEach((value, key) => {
+            filteredMap.forEach((value, key) => {
                 rawData[key] = {
                     risk: value.data.map(d => d.x),
                     profit: value.data.map(d => d.y)
                 };
             });
-            const combinedFrontData = combineNonDominatedSets(datasetMap);
+
+            const combinedFrontData = combineNonDominatedSets(filteredMap);
             rawData["Combined Front"] = {
                 risk: combinedFrontData.risk,
                 profit: combinedFrontData.profit
             };
+
             const normalized = normalize(rawData);
             const HV = calcHV(normalized);
             const GD = calcGD(normalized, "Combined Front");
@@ -1144,22 +1231,26 @@
             const hitRateResult = calculateHitRate(normalized);
             const hitRate = hitRateResult.percentages;
             const hitCounts = hitRateResult.counts;
+
             const combinedHV = HV["Combined Front"];
             const HVR = {};
             for (const name in HV) {
                 HVR[name] = combinedHV > 0 ? (HV[name] / combinedHV) * 100 : 0;
             }
+
             const tableBody = document.getElementById('metricsTable').querySelector('tbody');
             tableBody.innerHTML = '';
+
             const metricsData = [];
             let combinedFrontMetrics = null;
             for (const name in normalized) {
                 const pointCount = name === "Combined Front" ?
                     combinedFrontData.risk.length :
-                    datasetMap.get(name)?.data.length || 0;
+                    filteredMap.get(name)?.data.length || 0;
                 const data = {
                     fileName: name,
-                    customName: name === "Combined Front" ? "Combined" : datasetMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'), points: pointCount,
+                    customName: name === "Combined Front" ? "Combined" : filteredMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'),
+                    points: pointCount,
                     hv: HV[name],
                     gd: GD[name],
                     igd: IGD[name],
@@ -1172,51 +1263,55 @@
                     metricsData.push(data);
                 }
             }
+
             const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
             const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
             const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
             const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
             const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
             const maxHitRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hitRate)) : 0;
+
             metricsData.forEach(data => {
                 const hitCount = hitCounts[data.fileName] || { hits: 0, total: 0 };
                 const row = document.createElement('tr');
                 row.innerHTML = `
-          <td>${data.customName}</td>
-          <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
-          <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
-          <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
-          <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
-            ${data.hitRate.toFixed(2)}%
-            <span style="font-size: 0.7em; vertical-align: middle;">
-              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
-            </span>
-          </td>
-          <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
-          <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
+            <td>${data.customName}</td>
+            <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
+            <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
+            <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
+            <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
+                ${data.hitRate.toFixed(2)}%
+                <span style="font-size: 0.7em; vertical-align: middle;">
+                    \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+                </span>
+            </td>
+            <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
+            <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
         `;
                 tableBody.appendChild(row);
             });
+
             if (combinedFrontMetrics) {
                 const hitCount = hitCounts[combinedFrontMetrics.fileName] || { hits: 0, total: 0 };
                 const row = document.createElement('tr');
                 row.className = 'combined-front';
                 row.innerHTML = `
-          <td>${combinedFrontMetrics.customName}</td>
-          <td>${combinedFrontMetrics.points}</td>
-          <td>${combinedFrontMetrics.hv.toFixed(4)}</td>
-          <td>${combinedFrontMetrics.hvRate.toFixed(2)}%</td>
-          <td>
-            ${combinedFrontMetrics.hitRate.toFixed(2)}%
-            <span style="font-size: 0.7em; vertical-align: middle;">
-              \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
-            </span>
-          </td>
-          <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
-          <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
+            <td>${combinedFrontMetrics.customName}</td>
+            <td>${combinedFrontMetrics.points}</td>
+            <td>${combinedFrontMetrics.hv.toFixed(4)}</td>
+            <td>${combinedFrontMetrics.hvRate.toFixed(2)}%</td>
+            <td>
+                ${combinedFrontMetrics.hitRate.toFixed(2)}%
+                <span style="font-size: 0.7em; vertical-align: middle;">
+                    \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+                </span>
+            </td>
+            <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
+            <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
         `;
                 tableBody.appendChild(row);
             }
+
             document.getElementById('metricsTableContainer').style.display = 'block';
             if (window.MathJax) {
                 MathJax.typeset();
@@ -1244,7 +1339,7 @@
             entry.id = `entry-${CSS.escape(fileName)}`;
 
             const colorPreview = document.createElement('div');
-            colorPreview.className = 'color-preview-box';
+            colorPreview.className = 'color-preview-box-list';
             colorPreview.style.backgroundColor = defaultColor;
             colorPreview.style.opacity = datasetMap.get(fileName).opacity; // Apply opacity
             colorPreview.title = '點擊選擇顏色';
@@ -1263,12 +1358,12 @@
                 <div class="color-picker-content active" id="${modalId}-common">
                 <div class="common-colors">
                     ${[
-                            ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
-                            ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
-                            ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
-                            ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
-                            ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
-                        ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
+                    ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
+                    ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
+                    ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
+                    ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
+                    ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
+                ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
                 </div>
                 </div>
                 <div class="color-picker-content" id="${modalId}-hexrgb">
