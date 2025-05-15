@@ -236,8 +236,9 @@
             /*border-radius: 4px;*/
             z-index: 1002;
             /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
-            border-radius: 4px; /* 可選：保持圓角 */
-            
+            border-radius: 4px;
+            /* 可選：保持圓角 */
+
         }
 
         .date-inputs input[type="number"] {
@@ -254,12 +255,15 @@
             background-color: #f0f0f0;
             color: white;
             border: none;
-            padding: 1px 1px; /* 減少按鈕內邊距 */
+            padding: 1px 1px;
+            /* 減少按鈕內邊距 */
             cursor: pointer;
             font-size: 16px;
             font-family: '標楷體', 'PMingLiU', serif;
-            width: 30px; /* 縮小按鈕寬度 */
-    height: 24px; /* 縮小按鈕高度 */
+            width: 30px;
+            /* 縮小按鈕寬度 */
+            height: 24px;
+            /* 縮小按鈕高度 */
         }
 
         .date-inputs button:hover::after {
@@ -275,6 +279,7 @@
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
             white-space: nowrap;
         }
+
         .date-inputs button:hover {
             background-color: #ccc;
         }
@@ -798,13 +803,17 @@
                 entry.textContent = date;
                 entry.dataset.year = year;
                 entry.dataset.month = month;
-                // 預設選中 2025_04
-                if (year === '2025' && month === '04') {
-                    entry.classList.add('selected');
-                }
                 entry.addEventListener('click', () => {
+                    // Remove 'selected' class from all entries
                     sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
+                    // Add 'selected' class to clicked entry
                     entry.classList.add('selected');
+                    // Update date input fields
+                    const yearInput = document.getElementById('yearInput');
+                    const monthInput = document.getElementById('monthInput');
+                    yearInput.value = year;
+                    monthInput.value = parseInt(month, 10); // Remove leading zero for display
+                    // Load files for the selected date
                     loadFilesFromDataDir(year, month);
                 });
                 sidebar.appendChild(entry);
