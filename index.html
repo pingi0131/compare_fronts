@@ -222,10 +222,69 @@
             display: flex;
         }
 
+        .date-inputs {
+            position: fixed;
+            top: 15px;
+            right: 0px;
+            /* 與側邊欄觸發器對齊 */
+            display: flex;
+            align-items: center;
+            /*gap: 10px;*/
+            background-color: #f0f0f0;
+            /*padding: 6px;
+            border: 1px solid #ccc;
+            /*border-radius: 4px;*/
+            z-index: 1002;
+            /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
+            border-radius: 4px; /* 可選：保持圓角 */
+            
+        }
+
+        .date-inputs input[type="number"] {
+            width: 60px;
+            padding: 3px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            height: 24px;
+        }
+
+        .date-inputs button {
+            background-color: #f0f0f0;
+            color: white;
+            border: none;
+            padding: 1px 1px; /* 減少按鈕內邊距 */
+            cursor: pointer;
+            font-size: 16px;
+            font-family: '標楷體', 'PMingLiU', serif;
+            width: 30px; /* 縮小按鈕寬度 */
+    height: 24px; /* 縮小按鈕高度 */
+        }
+
+        .date-inputs button:hover::after {
+            background-color: #ffffff;
+            content: "Load";
+            position: absolute;
+            top: 100%;
+            right: 0%;
+            font-size: 20px;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+        }
+        .date-inputs button:hover {
+            background-color: #ccc;
+        }
+
         /* Sidebar styles */
         .sidebar {
+            top: 60px;
             width: 110px;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 122px);
+            /* Adjust height to fit */
             overflow-y: auto;
             background-color: #f0f0f0;
             border-top: 1px solid #ccc;
@@ -237,7 +296,6 @@
             position: fixed;
             right: -110px;
             /* Hidden by default */
-            top: 28px;
             transition: right 0.3s ease;
             /* Smooth sliding */
             z-index: 1000;
@@ -624,12 +682,18 @@
 </head>
 
 <body>
+    <div class="date-inputs">
+        <input type="number" id="yearInput" placeholder="Year" min="2023" max="2025" step="1">
+        <input type="number" id="monthInput" placeholder="Month" min="1" max="12" step="1">
+        <button id="loadDateBtn" class="reset-btn">✔️</button>
+    </div>
     <div class="sidebar-trigger" id="sidebarTrigger"></div>
     <div class="sidebar" id="dateSidebar">
         <!-- Date entries will be populated by JavaScript -->
     </div>
     <div class="main-content">
         <h1>多檔前緣比較圖 指標計算</h1>
+
         <div class="range-controls">
             <label class="math-label">\( f_1(x) \)</label>
             <input type="number" id="minRisk" placeholder="Min" step="1">
@@ -704,13 +768,21 @@
         // Generate date list (2023_01 to 2025_04)
         function generateDateList() {
             const dates = [];
-            for (let year = 2023; year <= 2025; year++) {
+            for (let year = 2025; year >= 2023; year--) {
+                const maxMonth = year === 2025 ? 4 : 12;
+                for (let month = maxMonth; month >= 1; month--) {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    dates.push(`${year}_${paddedMonth}`);
+                }
+            }
+
+            /*for (let year = 2023; year <= 2025; year++) {
                 const maxMonth = year === 2025 ? 4 : 12;
                 for (let month = 1; month <= maxMonth; month++) {
                     const paddedMonth = month.toString().padStart(2, '0');
                     dates.push(`${year}_${paddedMonth}`);
                 }
-            }
+            }*/
             return dates;
         }
 
@@ -726,17 +798,19 @@
                 entry.textContent = date;
                 entry.dataset.year = year;
                 entry.dataset.month = month;
-                entry.addEventListener('click', () => {
-                    // Remove 'selected' class from all entries
-                    sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
-                    // Add 'selected' class to clicked entry
+                // 預設選中 2025_04
+                if (year === '2025' && month === '04') {
                     entry.classList.add('selected');
-                    // Load files for the selected date
+                }
+                entry.addEventListener('click', () => {
+                    sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
+                    entry.classList.add('selected');
                     loadFilesFromDataDir(year, month);
                 });
                 sidebar.appendChild(entry);
             });
         }
+
         function initializeSidebarHover() {
             const sidebar = document.getElementById('dateSidebar');
             const trigger = document.getElementById('sidebarTrigger');
@@ -765,7 +839,96 @@
         document.addEventListener('DOMContentLoaded', () => {
             populateDateSidebar();
             initializeSidebarHover();
+            initializeDateInputs();
+
         });
+
+        // 初始化輸入框事件監聽器
+        function initializeDateInputs() {
+            const yearInput = document.getElementById('yearInput');
+            const monthInput = document.getElementById('monthInput');
+            const loadDateBtn = document.getElementById('loadDateBtn');
+
+            // 動態更新月份上限
+            yearInput.addEventListener('input', () => {
+                if (yearInput.value.trim() === '2025') {
+                    monthInput.max = '4';
+                    if (parseInt(monthInput.value) > 4) {
+                        monthInput.value = '4';
+                    }
+                } else {
+                    monthInput.max = '12';
+                }
+            });
+
+            // 點擊「載入」按鈕時觸發
+            loadDateBtn.addEventListener('click', () => {
+                let year = yearInput.value.trim();
+                let month = monthInput.value.trim().padStart(2, '0');
+
+                // 如果沒有輸入，預設為 2025 年 4 月
+                if (!year && (!month || month === '00')) {
+                    year = '2025';
+                    month = '04';
+                    yearInput.value = year;
+                    monthInput.value = '4';
+                }
+
+                if (validateDate(year, month)) {
+                    loadFilesFromDataDir(year, month);
+                    updateSidebarSelection(year, month);
+                } else {
+                    alert('區間範圍2023/01 ~ 2025/04');
+                }
+            });
+
+            // 按下 Enter 鍵時觸發
+            [yearInput, monthInput].forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        let year = yearInput.value.trim();
+                        let month = monthInput.value.trim().padStart(2, '0');
+
+                        // 如果沒有輸入，預設為 2025 年 4 月
+                        if (!year && (!month || month === '00')) {
+                            year = '2025';
+                            month = '04';
+                            yearInput.value = year;
+                            monthInput.value = '4';
+                        }
+
+                        if (validateDate(year, month)) {
+                            loadFilesFromDataDir(year, month);
+                            updateSidebarSelection(year, month);
+                        } else {
+                            alert('區間範圍2023/01 ~ 2025/04');
+                        }
+                    }
+                });
+            });
+        }
+
+        // 驗證年份和月份
+        function validateDate(year, month) {
+            const y = parseInt(year);
+            const m = parseInt(month);
+            if (isNaN(y) || isNaN(m)) return false;
+            if (y < 2023 || y > 2025) return false;
+            if (m < 1 || m > 12) return false;
+            if (y === 2025 && m > 4) return false; // 限制 2025 年到 1-4 月
+            return true;
+        }
+
+        // 更新側邊欄選中狀態
+        function updateSidebarSelection(year, month) {
+            const sidebar = document.getElementById('dateSidebar');
+            sidebar.querySelectorAll('.date-entry').forEach(entry => {
+                entry.classList.remove('selected');
+                if (entry.dataset.year === year && entry.dataset.month === month) {
+                    entry.classList.add('selected');
+                }
+            });
+        }
 
         // Modified loadFilesFromDataDir to accept year and month parameters
         async function loadFilesFromDataDir(year, month) {
@@ -777,7 +940,6 @@
             const paddedMonth = month.padStart(2, '0');
             const pattern = `${year}_${paddedMonth}`;
 
-            // Define file paths based on the selected date
             const csvFiles = [
                 `MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
                 `SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
@@ -786,11 +948,9 @@
             ];
 
             try {
-                // Clear existing data
                 datasetMap.clear();
                 document.getElementById('fileListContainer').innerHTML = '';
 
-                // Load each specified file
                 for (const filePath of csvFiles) {
                     try {
                         const fileResponse = await fetch(`https://pingi0131.github.io/compare_fronts/data/${filePath}`);
@@ -829,17 +989,15 @@
 
                         if (parsed.length > 0) {
                             const fileName = filePath.split('/').pop();
-                            // Extract folder name and simplify file name
                             const folder = filePath.split('/')[0].replace('%28M2M%29', '(M2M)');
-                            // Use MOEA/D for display instead of MOEAD
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
                             const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000';
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
-                                name: displayFolder, // e.g., MOEA/D
+                                name: displayFolder,
                                 data: parsed.sort((a, b) => a.x - b.x),
                                 color,
-                                simplifiedName: simplifiedFileName // e.g., MOEA/D_2023_03_front.csv
+                                simplifiedName: simplifiedFileName
                             });
                             addFileEntryUI(fileName, color);
                         }
@@ -849,8 +1007,8 @@
                 }
 
                 if (datasetMap.size > 0) {
-                    drawChart();
-                    document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+                    drawChart(); // 繪製圖表
+                    document.getElementById('resetColorsBtn').style.display = 'inline-block';
                     calculateMetrics();
                 } else {
                     alert(`沒有成功載入任何符合 "${pattern}" 的有效 CSV 檔案`);
