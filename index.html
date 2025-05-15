@@ -253,7 +253,7 @@
 
         .date-inputs button {
             background-color: #f0f0f0;
-            color: white;
+            color: #ffffff;
             border: none;
             padding: 1px 1px;
             /* 減少按鈕內邊距 */
@@ -261,9 +261,15 @@
             font-size: 16px;
             font-family: '標楷體', 'PMingLiU', serif;
             width: 30px;
-            /* 縮小按鈕寬度 */
             height: 24px;
-            /* 縮小按鈕高度 */
+            display: flex;
+            /* 使用 flex 佈局 */
+            justify-content: center;
+            /* 水平居中 */
+            align-items: center;
+            /* 垂直居中 */
+            border-radius: 4px;
+            /* 保持圓角 */
         }
 
         .date-inputs button:hover::after {
