@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadME</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <style>
+        body {
+            font-family: '標楷體', 'Times New Roman', serif;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 60px;
+            /* 避免內容被固定聲明遮擋 */
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #007BFF;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #9bc5f2;
+            margin: 3px 0;
+            padding: 10px;
+            cursor: pointer;
+            position: relative;
+            background-color: #f0f6ff;
+            border-radius: 5px;
+            transition: background-color 0.5s;
+        }
+
+        h2:hover {
+            background-color: #e0efff;
+        }
+
+        h2::after {
+            content: '▼';
+            position: absolute;
+            right: 15px;
+            font-size: 16px;
+            color: #9bc5f2;
+            transition: transform 0.5s;
+        }
+
+        h2.active::after {
+            transform: rotate(180deg);
+        }
+
+        p,
+        li {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        ul {
+            padding-left: 20px;
+            max-height: 0;
+            overflow: hidden;
+            margin: 0 0 5px 0;
+            transition: max-height 0.5s ease;
+        }
+
+        ul.active {
+            max-height: 1000px;
+        }
+
+        a {
+            color: #9bc5f2;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .accordion-item {
+            margin-bottom: 5px;
+        }
+
+        .sosume {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+        }
+
+        .sosume-content {
+            width: 40%;
+            min-width: 100px;
+            margin: 0 auto;
+            padding: 10px 0;
+        }
+
+        .sosume-content p {
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>多檔前緣比較網站使用教學</h1>
+        <p>網頁的使用指南，幫助您排解疑問，快速上手。</p>
+
+        <div class="accordion-item">
+            <h2>如何繪製前緣？</h2>
+            <ul>
+                <li>滑鼠移到右側，點選側邊欄的月份。</li>
+                <li>在右上角的輸入框輸入年份、月份，點擊「✔️」按鈕或按 Enter 載入。</li>
+                <li>若未輸入日期點擊「✔️」，則顯示資料庫中最新資料。</li>
+            </ul>
+        </div>
+
+        <div class="accordion-item">
+            <h2>可以看局部區域嗎？</h2>
+            <ul>
+                <li>從最上方的輸入框中輸入風險（\( f_1(x) \)）與報酬（\( f_2(x) \)）的範圍，即可顯示對應的細部區域。</li>
+                <li>也可以使用滑鼠滾輪，放大縮小整體可視範圍。</li>
+                <li>另外，連點圖片區域可回到預設範圍。</li>
+            </ul>
+        </div>
+
+        <div class="accordion-item">
+            <h2>重設鍵是做什麼用的？</h2>
+            <ul>
+                <li>每個輸入框旁的小按鈕可重置單個欄位。</li>
+                <li>點擊「All」按鈕重置所有輸入框。</li>
+            </ul>
+        </div>
+
+        <div class="accordion-item">
+            <h2>可以調整前緣顏色嗎？</h2>
+            <ul>
+                <li>每組前緣都可以個別設定顏色與透明度。</li>
+                <li>並使用「重設所有顏色」按鈕，將所有前緣顏色回到預設狀態。</li>
+            </ul>
+        </div>
+
+        <div class="accordion-item">
+            <h2>可以更改前緣名稱和查看表格嗎？</h2>
+            <ul>
+                <li>每組前緣都可以輸入想要的名稱。</li>
+                <li>所有前緣都命名好後往下滑，點擊「精緻表格」按鈕，看更詳細的數據比較。</li>
+            </ul>
+        </div>
+
+        <div class="accordion-item">
+            <h2>為什麼一個圖表內顯示多個月份？</h2>
+            <ul>
+                <li>繪製前緣需要一段時間，圖表區域不再變動後，重新點擊該月份就可以了。</li>
+            </ul>
+        </div>
+
+        <a href="index.html" class="back-link">返回主頁</a>
+    </div>
+
+    <div class="sosume">
+        <div class="sosume-content">
+            <p>所有數據皆由三位專題生交叉確認過，數據結果一致。抄襲或是偷竊任何存放在github上的數據均為不法所得，絕不容忍。</p>
+            <p style="text-align: right;">2025/05/15</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const headers = document.querySelectorAll('.accordion-item h2');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const isActive = header.classList.contains('active');
+                    header.classList.toggle('active');
+                    content.classList.toggle('active');
+                    content.style.maxHeight = isActive ? '0' : `${content.scrollHeight}px`;
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

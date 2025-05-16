@@ -381,6 +381,39 @@
             margin-bottom: 20px;
         }
 
+        .help-link {
+            font-family: '標楷體', 'PMingLiU', serif;
+            font-size: 30px;
+            /* 與 .range-controls 的字體大小一致 */
+            color: #9bc5f2;
+            /* 藍色，與 .reset-btn 背景色一致<a href= */
+            text-decoration: none;
+            /* 移除下劃線 */
+            margin-left: 10px;
+            /* 與 <h1> 保持間距 */
+            vertical-align: middle;
+            /* 與 <h1> 文字對齊 */
+        }
+
+        .help-link:hover {
+            color: #0056b3;
+            /* 懸停時變深，與 .reset-btn:hover 一致 */
+            text-decoration: underline;
+            /* 懸停時添加下劃線 */
+
+        }
+
+        .help-link:hover::after {
+            content: "使用手冊";
+            font-size: 30px;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
         .controls,
         .range-controls {
             font-size: 20px;
@@ -703,7 +736,7 @@
         <!-- Date entries will be populated by JavaScript -->
     </div>
     <div class="main-content">
-        <h1>多檔前緣比較圖 指標計算</h1>
+        <h1>多檔前緣比較圖 指標計算<a href="https://pingi0131.github.io/compare_fronts/guide.html" class="help-link">Help</a></h1>
 
         <div class="range-controls">
             <label class="math-label">\( f_1(x) \)</label>
