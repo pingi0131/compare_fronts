@@ -224,7 +224,7 @@
 
         .date-inputs {
             position: fixed;
-            top: 15px;
+            top: 40px;
             right: 0px;
             /* 與側邊欄觸發器對齊 */
             display: flex;
@@ -238,7 +238,6 @@
             /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
             border-radius: 4px;
             /* 可選：保持圓角 */
-
         }
 
         .date-inputs input[type="number"] {
@@ -272,6 +271,10 @@
             /* 保持圓角 */
         }
 
+        .date-inputs button:hover {
+            background-color: #ccc;
+        }
+
         .date-inputs button:hover::after {
             background-color: #ffffff;
             content: "Load";
@@ -286,13 +289,36 @@
             white-space: nowrap;
         }
 
-        .date-inputs button:hover {
-            background-color: #ccc;
+        .data-source-container {
+            position: fixed;
+            top: 10px;
+            right: 0px;
+            display: flex;
+            align-items: center;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            z-index: 1003;
+        }
+
+        .data-source-container select {
+            padding: 3px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            height: 30px;
+            background-color: #fff;
+            cursor: pointer;
+            font-family: '標楷體', 'PMingLiU', serif;
+        }
+
+        .data-source-container select:focus {
+            outline: none;
+            border-color: #007BFF;
         }
 
         /* Sidebar styles */
         .sidebar {
-            top: 60px;
+            top: 75px;
             width: 110px;
             height: calc(100vh - 122px);
             /* Adjust height to fit */
@@ -726,6 +752,15 @@
 </head>
 
 <body>
+    <div class="data-source-container">
+        <select id="dataSourceSelect">
+            <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                WPM MoQA</option>
+            <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
+                EPM H-MoQTS</option>
+        </select>
+    </div>
+
     <div class="date-inputs">
         <input type="number" id="yearInput" placeholder="Year" min="2023" max="2025" step="1">
         <input type="number" id="monthInput" placeholder="Month" min="1" max="12" step="1">
@@ -809,24 +844,29 @@
             return filteredMap;
         }
 
-        // Generate date list (2023_01 to 2025_04)
+        // Generate date list
         function generateDateList() {
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+            const minYear = parseInt(selectedOption.dataset.minYear);
+            const maxYear = parseInt(selectedOption.dataset.maxYear);
+            const minMonth = parseInt(selectedOption.dataset.minMonth);
+            const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
             const dates = [];
-            for (let year = 2025; year >= 2023; year--) {
-                const maxMonth = year === 2025 ? 4 : 12;
-                for (let month = maxMonth; month >= 1; month--) {
+
+            for (let year = maxYear; year >= minYear; year--) {
+
+                // Apply specific min/max only for minYear and maxYear
+                let maxMonthForYear = year === maxYear ? maxMonth : 12;
+                let minMonthForYear = year === minYear ? minMonth : 1;
+
+                for (let month = maxMonthForYear; month >= minMonthForYear; month--) {
                     const paddedMonth = month.toString().padStart(2, '0');
                     dates.push(`${year}_${paddedMonth}`);
                 }
             }
 
-            /*for (let year = 2023; year <= 2025; year++) {
-                const maxMonth = year === 2025 ? 4 : 12;
-                for (let month = 1; month <= maxMonth; month++) {
-                    const paddedMonth = month.toString().padStart(2, '0');
-                    dates.push(`${year}_${paddedMonth}`);
-                }
-            }*/
             return dates;
         }
 
@@ -883,12 +923,59 @@
                 }
             });
         }
+
+        function initializeDataSourceSelect() {
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            dataSourceSelect.addEventListener('change', () => {
+                // 刷新側邊欄的日期列表
+                populateDateSidebar();
+
+                // 清空圖表和相關 UI 元素
+                datasetMap.clear();
+                document.getElementById('fileListContainer').innerHTML = '';
+                document.getElementById('chart-container').style.display = 'none';
+                document.getElementById('metricsOutput').style.display = 'none';
+                document.getElementById('metricsTableContainer').style.display = 'none';
+                document.getElementById('showTableBtn').style.display = 'none';
+                document.getElementById('resetColorsBtn').style.display = 'none';
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+
+                // 更新輸入框的限制條件
+                const yearInput = document.getElementById('yearInput');
+                const monthInput = document.getElementById('monthInput');
+                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                const minYear = parseInt(selectedOption.dataset.minYear);
+                const maxYear = parseInt(selectedOption.dataset.maxYear);
+                const minMonth = parseInt(selectedOption.dataset.minMonth);
+                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
+                // 重置輸入框為空或預設值
+                yearInput.value = '';
+                monthInput.value = '';
+
+                // 更新年份和月份的限制
+                yearInput.min = minYear;
+                yearInput.max = maxYear;
+                monthInput.min = minMonth;
+                monthInput.max = maxMonth;
+
+                // 清空側邊欄的選中狀態
+                const sidebar = document.getElementById('dateSidebar');
+                sidebar.querySelectorAll('.date-entry').forEach(entry => {
+                    entry.classList.remove('selected');
+                });
+            });
+        }
+
         // Call populateDateSidebar when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             populateDateSidebar();
             initializeSidebarHover();
             initializeDateInputs();
-
+            initializeDataSourceSelect();
         });
 
         // 初始化輸入框事件監聽器
@@ -896,37 +983,70 @@
             const yearInput = document.getElementById('yearInput');
             const monthInput = document.getElementById('monthInput');
             const loadDateBtn = document.getElementById('loadDateBtn');
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
 
-            // 動態更新月份上限
-            yearInput.addEventListener('input', () => {
-                if (yearInput.value.trim() === '2025') {
-                    monthInput.max = '4';
-                    if (parseInt(monthInput.value) > 4) {
-                        monthInput.value = '4';
-                    }
-                } else {
-                    monthInput.max = '12';
+            function updateInputConstraints() {
+                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                const minYear = parseInt(selectedOption.dataset.minYear);
+                const maxYear = parseInt(selectedOption.dataset.maxYear);
+                const minMonth = parseInt(selectedOption.dataset.minMonth);
+                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
+                // Set year input constraints
+                yearInput.min = minYear;
+                yearInput.max = maxYear;
+                yearInput.placeholder = `Year`;
+
+                // Set month input constraints based on year
+                const year = parseInt(yearInput.value) || maxYear;
+                let minMonthForYear = year === minYear ? minMonth : 1;
+                let maxMonthForYear = year === maxYear ? maxMonth : 12;
+
+                monthInput.min = minMonthForYear;
+                monthInput.max = maxMonthForYear;
+
+                // Adjust month input if out of range
+                const currentMonth = parseInt(monthInput.value);
+                if (currentMonth < minMonthForYear) {
+                    monthInput.value = minMonthForYear;
                 }
-            });
+                else if (currentMonth > maxMonthForYear) {
+                    monthInput.value = maxMonthForYear;
+                }
+            }
+
+            // Initialize constraints on page load
+            updateInputConstraints();
+
+            // Update constraints when dataset or year changes
+            dataSourceSelect.addEventListener('change', updateInputConstraints);
+            yearInput.addEventListener('input', updateInputConstraints);
 
             // 點擊「載入」按鈕時觸發
             loadDateBtn.addEventListener('click', () => {
                 let year = yearInput.value.trim();
                 let month = monthInput.value.trim().padStart(2, '0');
 
-                // 如果沒有輸入，預設為 2025 年 4 月
+                // 如果沒有輸入，預設為最大年份和最大月份
                 if (!year && (!month || month === '00')) {
-                    year = '2025';
-                    month = '04';
+                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                    year = selectedOption.dataset.maxYear;
+                    const maxMonth = selectedOption.dataset.maxMonth;
+                    month = maxMonth.padStart(2, '0');
                     yearInput.value = year;
-                    monthInput.value = '4';
+                    monthInput.value = parseInt(maxMonth);
                 }
 
                 if (validateDate(year, month)) {
                     loadFilesFromDataDir(year, month);
                     updateSidebarSelection(year, month);
                 } else {
-                    alert('區間範圍2023/01 ~ 2025/04');
+                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                    const minYear = selectedOption.dataset.minYear;
+                    const maxYear = selectedOption.dataset.maxYear;
+                    const minMonth = selectedOption.dataset.minMonth;
+                    const maxMonth = selectedOption.dataset.maxMonth;
+                    alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
                 }
             });
 
@@ -937,19 +1057,26 @@
                         let year = yearInput.value.trim();
                         let month = monthInput.value.trim().padStart(2, '0');
 
-                        // 如果沒有輸入，預設為 2025 年 4 月
+                        // 如果沒有輸入，預設為最大年份和最大月份
                         if (!year && (!month || month === '00')) {
-                            year = '2025';
-                            month = '04';
+                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                            year = selectedOption.dataset.maxYear;
+                            const maxMonth = selectedOption.dataset.maxMonth;
+                            month = maxMonth.padStart(2, '0');
                             yearInput.value = year;
-                            monthInput.value = '4';
+                            monthInput.value = parseInt(maxMonth);
                         }
 
                         if (validateDate(year, month)) {
                             loadFilesFromDataDir(year, month);
                             updateSidebarSelection(year, month);
                         } else {
-                            alert('區間範圍2023/01 ~ 2025/04');
+                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                            const minYear = selectedOption.dataset.minYear;
+                            const maxYear = selectedOption.dataset.maxYear;
+                            const minMonth = selectedOption.dataset.minMonth;
+                            const maxMonth = selectedOption.dataset.maxMonth;
+                            alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
                         }
                     }
                 });
@@ -961,9 +1088,24 @@
             const y = parseInt(year);
             const m = parseInt(month);
             if (isNaN(y) || isNaN(m)) return false;
-            if (y < 2023 || y > 2025) return false;
+
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+            const minYear = parseInt(selectedOption.dataset.minYear);
+            const maxYear = parseInt(selectedOption.dataset.maxYear);
+            const minMonth = parseInt(selectedOption.dataset.minMonth);
+
+            if (y < minYear || y > maxYear) return false;
             if (m < 1 || m > 12) return false;
-            if (y === 2025 && m > 4) return false; // 限制 2025 年到 1-4 月
+
+            // Check minimum month for the starting year
+            if (y === minYear && m < minMonth) return false;
+
+            // Check maximum month for the year
+            const maxMonthAttr = selectedOption.dataset[`maxMonth${y}`];
+            const maxMonth = maxMonthAttr ? parseInt(maxMonthAttr) : 12;
+            if (m > maxMonth) return false;
+
             return true;
         }
 
@@ -984,22 +1126,32 @@
                 alert('請選擇一個日期');
                 return;
             }
-
+            const dataSource = document.getElementById('dataSourceSelect').value;
             const paddedMonth = month.padStart(2, '0');
             const pattern = `${year}_${paddedMonth}`;
-
-            const csvFiles = [
-                `MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
-                `SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                `MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                `NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
-            ];
+            let csvFiles = [];
+            if (dataSource === 'EPM_H-MoQTS') {
+                csvFiles = [
+                    `H-MoQTS/MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
+                    `H-MoQTS/SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `H-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `H-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
+                ];
+            } else if (dataSource === 'WPM_MoQA') {
+                csvFiles = [
+                    `WPM-MoQA/MoQA/${year}_${paddedMonth}_0.025_Result.csv`,
+                    `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
+                ];
+            }
 
             try {
                 datasetMap.clear();
                 document.getElementById('fileListContainer').innerHTML = '';
 
                 for (const filePath of csvFiles) {
+                    //alert(`${filePath}`)
                     try {
                         const fileResponse = await fetch(`https://pingi0131.github.io/compare_fronts/data/${filePath}`);
                         if (!fileResponse.ok) {
@@ -1029,7 +1181,7 @@
                             const y = parseFloat(cols[profitIndex]);
                             const key = `${x},${y}`;
 
-                            if (!isNaN(x) && !isNaN(y) && !(x === 0 && y === 0) && !parsedSet.has(key)) {
+                            if (!isNaN(x) && !isNaN(y) && x > 0 && y > 0 && !parsedSet.has(key)) {
                                 parsedSet.add(key);
                                 parsed.push({ x, y });
                             }
@@ -1037,9 +1189,9 @@
 
                         if (parsed.length > 0) {
                             const fileName = filePath.split('/').pop();
-                            const folder = filePath.split('/')[0].replace('%28M2M%29', '(M2M)');
+                            const folder = filePath.split('/')[1].replace('%28M2M%29', '(M2M)'); // Use second-level folder
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000';
+                            const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
                                 name: displayFolder,
@@ -1060,6 +1212,18 @@
                     calculateMetrics();
                 } else {
                     alert(`沒有成功載入任何符合 "${pattern}" 的有效 CSV 檔案`);
+                    // Clear and hide UI elements
+                    datasetMap.clear();
+                    document.getElementById('fileListContainer').innerHTML = '';
+                    document.getElementById('chart-container').style.display = 'none';
+                    document.getElementById('metricsOutput').style.display = 'none';
+                    document.getElementById('metricsTableContainer').style.display = 'none';
+                    document.getElementById('showTableBtn').style.display = 'none';
+                    document.getElementById('resetColorsBtn').style.display = 'none';
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                        chartInstance = null;
+                    }
                 }
             } catch (error) {
                 console.error('載入檔案時發生錯誤:', error);
