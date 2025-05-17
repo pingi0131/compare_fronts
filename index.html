@@ -760,8 +760,6 @@
                 WPM MoQA</option>
             <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
                 EPM H-MoQTS</option>
-            <option value="WPM_MoQTS" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="5">
-                WPM MoQTS</option>
         </select>
     </div>
 
@@ -1147,13 +1145,6 @@
                     `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
-                ];
-            } else if (dataSource === 'WPM_MoQTS') {
-                csvFiles = [
-                    `WPM-MoQTS/MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
-                    `WPM-MoQTS/SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
                 ];
             }
 
