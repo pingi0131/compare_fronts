@@ -624,12 +624,16 @@
         .color-picker-tabs button {
             padding: 5px;
             background: #f0f0f0;
+            /* 恢復默認背景色 */
             color: #333333;
+            /* 恢復默認文字顏色 */
             border: none;
             cursor: pointer;
             font-size: 14px;
             border-radius: 3px 3px 0 0;
             text-align: center;
+            transition: background-color 0.2s ease;
+            /* 保持平滑過渡 */
         }
 
         .color-picker-content input[type="color"] {
@@ -686,11 +690,14 @@
         }
 
         .hexrgb-inputs label {
-            font-size: 14px;
-            display: grid;
-            grid-template-columns: 60px 115px 60px;
+            display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            /* Keep horizontal gap as is or adjust as needed */
+            font-size: 14px;
+            margin-bottom: 4px;
+            /* Reduced from 8px to 4px for less vertical spacing */
+            width: 100%;
         }
 
         .hexrgb-inputs input.rgb-slider {
@@ -707,6 +714,7 @@
             width: 50px;
             padding: 3px;
             font-size: 14px;
+            text-align: right;
         }
 
         .hexrgb-inputs input.hex-input {
@@ -737,6 +745,44 @@
             font-size: 14px;
         }
 
+        .rgb-preview-box {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            vertical-align: middle;
+            border-radius: 4px;
+            flex-shrink: 0;
+            /* Prevent preview box from shrinking */
+        }
+
+        .rgb-slider {
+            flex: 1;
+            /* Take remaining space */
+            min-width: 50px;
+            /* Ensure slider is usable */
+            vertical-align: middle;
+        }
+
+        .rgb-number {
+            width: 50px;
+            padding: 3px;
+            font-size: 20px;
+            vertical-align: middle;
+            flex-shrink: 0;
+            /* Prevent number input from shrinking */
+            text-align: right;
+            /* 文字靠右對齊 */
+        }
+
+        .color-preview-box {
+            opacity: 1;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
         .color-preview-box-list {
             width: 30px;
             height: 30px;
@@ -749,6 +795,18 @@
 
         .color-preview-box-list:hover {
             border-color: #000;
+        }
+
+        .hexrgb-inputs label span {
+            font-size: 24px;
+            /* 保持字體大小 */
+            display: inline-block;
+            /* 讓它可以有寬度屬性 */
+            width: auto;
+            /* 自動寬度根據內容 */
+            white-space: nowrap;
+            /* 防止換行 */
+            font-family: "標楷體", "Times New Roman", serif;
         }
     </style>
 </head>
@@ -1293,16 +1351,47 @@
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
-                // Reassign #FF0000 for MoQTS, defaultColors for others
                 const newColor = (data.name === 'MoQTS' || data.name === 'MoQA') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
                 data.color = newColor;
-                //data.opacity = 0.6; // Reset opacity
+                data.opacity = 1;
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
                 if (entryDiv) {
                     const colorPreview = entryDiv.querySelector('.color-preview-box-list');
                     if (colorPreview) {
                         colorPreview.style.backgroundColor = newColor;
-                        //colorPreview.style.opacity = 0.6;
+                        colorPreview.style.opacity = 1;
+                    }
+                    const modal = entryDiv.querySelector('.color-picker-modal');
+                    if (modal) {
+                        const hexInput = modal.querySelector('.hex-input');
+                        const rgbSliders = modal.querySelectorAll('.rgb-slider');
+                        const rgbNumbers = modal.querySelectorAll('.rgb-number');
+                        const rgbPreviewBoxes = modal.querySelectorAll('.rgb-preview-box');
+                        const opacitySlider = modal.querySelector('.opacity-slider');
+                        const opacityNumber = modal.querySelector('.opacity-number');
+                        const livePreview = modal.querySelector('.live-preview');
+                        const nativeColorInput = modal.querySelector('.native-color-input');
+
+                        const r = parseInt(newColor.slice(1, 3), 16);
+                        const g = parseInt(newColor.slice(3, 5), 16);
+                        const b = parseInt(newColor.slice(5, 7), 16);
+                        const a = 1;
+
+                        hexInput.value = newColor;
+                        rgbSliders[0].value = r;
+                        rgbSliders[1].value = g;
+                        rgbSliders[2].value = b;
+                        rgbNumbers[0].value = r;
+                        rgbNumbers[1].value = g;
+                        rgbNumbers[2].value = b;
+                        rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                        rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                        rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                        opacitySlider.value = a;
+                        opacityNumber.value = Math.round(a * 100); // Convert to percentage
+                        livePreview.style.backgroundColor = newColor;
+                        livePreview.style.opacity = a;
+                        nativeColorInput.value = newColor;
                     }
                 }
             });
@@ -1725,61 +1814,63 @@
             const colorPreview = document.createElement('div');
             colorPreview.className = 'color-preview-box-list';
             colorPreview.style.backgroundColor = defaultColor;
-            colorPreview.style.opacity = datasetMap.get(fileName).opacity; // Apply opacity
+            colorPreview.style.opacity = datasetMap.get(fileName).opacity || 1;
             colorPreview.title = '點擊選擇顏色';
 
             const modalId = `color-picker-${modalCounter++}`;
-
             const modal = document.createElement('div');
             modal.className = 'color-picker-modal';
             modal.style.display = 'none';
             modal.innerHTML = `
-                <div class="color-picker-tabs">
-                <button data-tab="common" class="active">常用顏色</button>
-                <button data-tab="hexrgb">HEX & RGB</button>
-                <button data-tab="native">原生選擇器</button>
-                </div>
-                <div class="color-picker-content active" id="${modalId}-common">
-                <div class="common-colors">
-                    ${[
+        <div class="color-picker-tabs">
+            <button data-tab="common" class="active">常用顏色</button>
+            <button data-tab="hexrgb">HEX & RGB</button>
+            <button data-tab="native">原生選擇器</button>
+        </div>
+        <div class="color-picker-content active" id="${modalId}-common">
+            <div class="common-colors">
+                ${[
                     ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
                     ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
                     ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
                     ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
                     ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
                 ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
-                </div>
-                </div>
-                <div class="color-picker-content" id="${modalId}-hexrgb">
-                <div class="hexrgb-inputs">
-                    <label>紅:
+            </div>
+        </div>
+        <div class="color-picker-content" id="${modalId}-hexrgb">
+            <div class="hexrgb-inputs">
+                <label><span>紅 :</span>
+                    <div class="rgb-preview-box" style="background-color: rgb(${parseInt(defaultColor.slice(1, 3), 16)}, 0, 0);"></div>
                     <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
                     <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
-                    </label>
-                    <label>綠:
+                </label>
+                <label><span>綠 :</span>
+                    <div class="rgb-preview-box" style="background-color: rgb(0, ${parseInt(defaultColor.slice(3, 5), 16)}, 0);"></div>
                     <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
                     <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
-                    </label>
-                    <label>藍:
+                </label>
+                <label><span>藍 :</span>
+                    <div class="rgb-preview-box" style="background-color: rgb(0, 0, ${parseInt(defaultColor.slice(5, 7), 16)});"></div>
                     <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
                     <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: 1; width: 24px; height: 24px; border: 1px solid #ccc;"></div>
-                    <span style="font-size: 0.85em;">十六進位表示</span>
+                </label>
+                <label><span>不透明度 :</span>
+                    <input type="range" min="0" max="1" step="0.01" value="${datasetMap.get(fileName).opacity || 1}" class="opacity-slider">
+                    <input type="number" min="0" max="100" step="1" value="${Math.round((datasetMap.get(fileName).opacity || 1) * 100)}" class="opacity-number">%
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
+                    <span>十六進位表示 :</span>
+                    <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: ${datasetMap.get(fileName).opacity || 1};"></div>
                     <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}" style="width: 100px;">
-                    </div>
-                    <label>不透明度:
-                    <input type="range" min="0" max="1" step="0.01" value="1" class="opacity-slider">
-                    <input type="number" min="0" max="1" step="0.01" value="1" class="opacity-number">
-                    </label>
-                    <button class="confirm-btn">確認</button>
+                    <button class="confirm-btn">更新</button>
                 </div>
-                </div>
-                <div class="color-picker-content" id="${modalId}-native">
-                <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
-                </div>
-            `;
+            </div>
+        </div>
+        <div class="color-picker-content" id="${modalId}-native">
+            <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
+        </div>
+    `;
 
             entry.appendChild(modal);
 
@@ -1803,7 +1894,8 @@
             colorSwatches.forEach(swatch => {
                 swatch.addEventListener('click', () => {
                     const color = swatch.getAttribute('data-color');
-                    updateColor(color);
+                    const opacity = parseFloat(modal.querySelector(`#${modalId}-hexrgb .opacity-number`).value) / 100 || 1;
+                    updateColor(color, opacity);
                 });
             });
 
@@ -1811,21 +1903,20 @@
                 datasetMap.get(fileName).color = hex;
                 datasetMap.get(fileName).opacity = opacity;
                 colorPreview.style.backgroundColor = hex;
-                drawChart();
-                modal.style.display = 'none';
-            };
+                colorPreview.style.opacity = opacity;
 
-            const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
-            const updateFromNativeInput = () => {
-                updateColor(nativeColorInput.value);
-                const hex = nativeColorInput.value;
-                const r = parseInt(hex.slice(1, 3), 16);
-                const g = parseInt(hex.slice(3, 5), 16);
-                const b = parseInt(hex.slice(5, 7), 16);
                 const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
                 const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
                 const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+                const rgbPreviewBoxes = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-preview-box`);
+                const opacitySlider = modal.querySelector(`#${modalId}-hexrgb .opacity-slider`);
+                const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
                 const livePreview = modal.querySelector(`#${modalId}-hexrgb .live-preview`);
+
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+
                 hexInput.value = hex;
                 rgbSliders[0].value = r;
                 rgbSliders[1].value = g;
@@ -1833,8 +1924,26 @@
                 rgbNumbers[0].value = r;
                 rgbNumbers[1].value = g;
                 rgbNumbers[2].value = b;
+                rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                opacitySlider.value = opacity;
+                opacityNumber.value = Math.round(opacity * 100);
                 livePreview.style.backgroundColor = hex;
-                livePreview.style.opacity = 1;
+                livePreview.style.opacity = opacity;
+
+                const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
+                nativeColorInput.value = hex;
+
+                drawChart();
+                modal.style.display = 'none';
+            };
+
+            const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
+            const updateFromNativeInput = () => {
+                const hex = nativeColorInput.value;
+                const opacity = parseFloat(modal.querySelector(`#${modalId}-hexrgb .opacity-number`).value) / 100 || 1;
+                updateColor(hex, opacity);
             };
 
             nativeColorInput.addEventListener('input', updateFromNativeInput);
@@ -1846,18 +1955,18 @@
             const opacitySlider = modal.querySelector(`#${modalId}-hexrgb .opacity-slider`);
             const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
             const confirmBtn = modal.querySelector(`#${modalId}-hexrgb .confirm-btn`);
-
-            const livePreview = modal.querySelector('.live-preview');
+            const livePreview = modal.querySelector(`#${modalId}-hexrgb .live-preview`);
 
             const updatePreview = () => {
                 const r = parseInt(rgbNumbers[0].value) || 0;
                 const g = parseInt(rgbNumbers[1].value) || 0;
                 const b = parseInt(rgbNumbers[2].value) || 0;
-                const a = parseFloat(opacityNumber.value) || 1;
+                const a = parseFloat(opacityNumber.value) / 100 || 0; // Use 0 if invalid
                 if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
                     const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
                     livePreview.style.backgroundColor = hex;
                     livePreview.style.opacity = a;
+                    hexInput.value = hex;
                 }
             };
 
@@ -1867,13 +1976,13 @@
                     const r = parseInt(value.slice(1, 3), 16);
                     const g = parseInt(value.slice(3, 5), 16);
                     const b = parseInt(value.slice(5, 7), 16);
-                    rgbSliders[0].value = r;
-                    rgbSliders[1].value = g;
-                    rgbSliders[2].value = b;
-                    rgbNumbers[0].value = r;
-                    rgbNumbers[1].value = g;
-                    rgbNumbers[2].value = b;
-                    updatePreview();
+                    const a = parseFloat(opacityNumber.value) / 100 || 0;
+                    rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                    rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                    rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                    livePreview.style.backgroundColor = value;
+                    livePreview.style.opacity = a;
+                    updateColor(value, a);
                 }
             };
 
@@ -1881,35 +1990,73 @@
                 const r = parseInt(rgbNumbers[0].value) || 0;
                 const g = parseInt(rgbNumbers[1].value) || 0;
                 const b = parseInt(rgbNumbers[2].value) || 0;
-                const a = parseFloat(opacityNumber.value) || 1;
+                const a = parseFloat(opacityNumber.value) / 100 || 0;
                 if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
                     const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-                    hexInput.value = hex;
-                    rgbSliders[0].value = r;
-                    rgbSliders[1].value = g;
-                    rgbSliders[2].value = b;
-                    updatePreview();
+                    rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                    rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                    rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                    livePreview.style.backgroundColor = hex;
+                    livePreview.style.opacity = a;
+                    updateColor(hex, a);
                 }
             };
 
-            const syncSliderAndNumber = (slider, number) => {
+            const syncSliderAndNumber = (slider, number, previewBox, channel) => {
                 slider.addEventListener('input', () => {
-                    number.value = slider.value;
-                    updateFromRGB();
+                    if (channel === 'opacity') {
+                        const value = parseFloat(slider.value) || 0;
+                        number.value = Math.round(value * 100); // Convert decimal to percentage
+                        updatePreview(); // Update live preview with opacity
+                    } else {
+                        number.value = slider.value;
+                        updatePreview();
+                        const value = parseInt(slider.value) || 0;
+                        if (channel === 'r') {
+                            previewBox.style.backgroundColor = `rgb(${value}, 0, 0)`;
+                        } else if (channel === 'g') {
+                            previewBox.style.backgroundColor = `rgb(0, ${value}, 0)`;
+                        } else if (channel === 'b') {
+                            previewBox.style.backgroundColor = `rgb(0, 0, ${value})`;
+                        }
+                    }
                 });
                 number.addEventListener('input', () => {
-                    slider.value = number.value;
-                    updateFromRGB();
+                    if (channel === 'opacity') {
+                        let value = parseFloat(number.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 100) value = 100;
+                        slider.value = value / 100; // Convert percentage to decimal
+                        number.value = value;
+                        updatePreview(); // Update live preview with opacity
+                    } else {
+                        let value = parseInt(number.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 255) value = 255;
+                        slider.value = value;
+                        number.value = value;
+                        updatePreview();
+                        if (channel === 'r') {
+                            previewBox.style.backgroundColor = `rgb(${value}, 0, 0)`;
+                        } else if (channel === 'g') {
+                            previewBox.style.backgroundColor = `rgb(0, ${value}, 0)`;
+                        } else if (channel === 'b') {
+                            previewBox.style.backgroundColor = `rgb(0, 0, ${value})`;
+                        }
+                    }
                 });
                 number.addEventListener('keypress', e => {
-                    if (e.key === 'Enter') updateFromRGB();
+                    if (e.key === 'Enter') {
+                        updateFromRGB();
+                    }
                 });
             };
 
-            syncSliderAndNumber(rgbSliders[0], rgbNumbers[0]);
-            syncSliderAndNumber(rgbSliders[1], rgbNumbers[1]);
-            syncSliderAndNumber(rgbSliders[2], rgbNumbers[2]);
-            syncSliderAndNumber(opacitySlider, opacityNumber);
+            const rgbPreviewBoxes = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-preview-box`);
+            syncSliderAndNumber(rgbSliders[0], rgbNumbers[0], rgbPreviewBoxes[0], 'r');
+            syncSliderAndNumber(rgbSliders[1], rgbNumbers[1], rgbPreviewBoxes[1], 'g');
+            syncSliderAndNumber(rgbSliders[2], rgbNumbers[2], rgbPreviewBoxes[2], 'b');
+            syncSliderAndNumber(opacitySlider, opacityNumber, livePreview, 'opacity');
 
             hexInput.addEventListener('input', updateFromHex);
             hexInput.addEventListener('keypress', e => {
@@ -1920,7 +2067,7 @@
                 const r = parseInt(rgbNumbers[0].value) || 0;
                 const g = parseInt(rgbNumbers[1].value) || 0;
                 const b = parseInt(rgbNumbers[2].value) || 0;
-                const a = parseFloat(opacityNumber.value) || 1;
+                const a = parseFloat(opacityNumber.value) / 100 || 0;
                 if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
                     const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
                     updateColor(hex, a);
@@ -1968,7 +2115,6 @@
 
             entry.appendChild(colorPreview);
             entry.appendChild(nameInput);
-            // Use simplified file name for display
             entry.appendChild(document.createTextNode(datasetMap.get(fileName).simplifiedName));
             entry.appendChild(delBtn);
             container.appendChild(entry);
