@@ -816,6 +816,8 @@
         <select id="dataSourceSelect">
             <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 WPM MoQA</option>
+            <option value="QA_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                ELS effect</option>
             <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
                 EPM H-MoQTS</option>
         </select>
@@ -1197,6 +1199,11 @@
                     `H-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `H-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
                 ];
+            } else if (dataSource === 'QA_ELS_BA') {
+                csvFiles = [
+                    `QA_BA_ELS/with ELS/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `QA_BA_ELS/w.o. ELS/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                ];
             } else if (dataSource === 'WPM_MoQA') {
                 csvFiles = [
                     `WPM-MoQA/MoQA/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
@@ -1205,7 +1212,7 @@
                     `WPM-MoQA/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
                 ];
             }
-
+            
             try {
                 datasetMap.clear();
                 document.getElementById('fileListContainer').innerHTML = '';
@@ -1251,7 +1258,7 @@
                             const fileName = filePath.split('/').pop();
                             const folder = filePath.split('/')[1].replace('%28M2M%29', '(M2M)'); // Use second-level folder
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
+                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
                                 name: displayFolder,
@@ -1351,7 +1358,7 @@
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
+                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
                 data.color = newColor;
                 data.opacity = 1;
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
