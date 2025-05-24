@@ -560,7 +560,7 @@
 
         #metricsTable {
             font-family: monospace;
-            font-size: 16px;
+            font-size: 18px;
             text-align: center;
             table-layout: fixed;
             width: 100%;
@@ -582,7 +582,7 @@
 
         #metricsTable th,
         #metricsTable td {
-            width: calc(100% / 7);
+            width: calc(100% / 6);
         }
 
         #metricsTable td.best {
@@ -867,7 +867,7 @@
                         <th>HV</th>
                         <th>HV Rate</th>
                         <th>Hit Rate</th>
-                        <th>GD</th>
+                        <!-- <th>GD</th> -->
                         <th>IGD</th>
                     </tr>
                 </thead>
@@ -1202,7 +1202,7 @@
                     `WPM-MoQA/MoQA/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-MoQA/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
+                    `WPM-MoQA/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
                 ];
             }
 
@@ -1466,7 +1466,7 @@
             };
         }
 
-        function calcGD(normalized, frontKey) {
+        /*function calcGD(normalized, frontKey) {
             const result = {};
             const normalizedFront = {
                 risk: normalized[frontKey].risk,
@@ -1492,7 +1492,7 @@
                 result[name] = Math.sqrt(sumMin) / data.risk.length;
             }
             return result;
-        }
+        }*/
 
         function calcIGD(normalized, frontKey) {
             const result = {};
@@ -1624,7 +1624,7 @@
 
             try {
                 const HV = calcHV(normalized);
-                const GD = calcGD(normalized, "Combined Front");
+                //const GD = calcGD(normalized, "Combined Front");
                 const IGD = calcIGD(normalized, "Combined Front");
                 const hitRateResult = calculateHitRate(normalized);
                 const hitRate = hitRateResult.percentages;
@@ -1635,13 +1635,14 @@
                         continue;
                     }
                     const hv = HV[name].toFixed(4);
-                    const gd = formatScientific(GD[name], 2);
+                    //const gd = formatScientific(GD[name], 2);
                     const igd = formatScientific(IGD[name], 2);
                     const hv_value = HV[name].toFixed(20);
-                    const gd_value = GD[name].toFixed(20);
+                    //const gd_value = GD[name].toFixed(20);
                     const igd_value = IGD[name].toFixed(20);
                     const displayName = filteredMap.get(name)?.simplifiedName || name;
-                    output += `${displayName}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
+                    //output += `${displayName}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
+                    output += `${displayName}\nHV:  ${hv} (${hv_value})\nIGD: ${igd} (${igd_value})\n\n`;
                 }
 
                 const panel = document.getElementById('metricsOutput');
@@ -1699,7 +1700,7 @@
 
             const normalized = normalize(rawData);
             const HV = calcHV(normalized);
-            const GD = calcGD(normalized, "Combined Front");
+            //const GD = calcGD(normalized, "Combined Front");
             const IGD = calcIGD(normalized, "Combined Front");
             const hitRateResult = calculateHitRate(normalized);
             const hitRate = hitRateResult.percentages;
@@ -1725,7 +1726,7 @@
                     customName: name === "Combined Front" ? "Combined" : filteredMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'),
                     points: pointCount,
                     hv: HV[name],
-                    gd: GD[name],
+                    //gd: GD[name],
                     igd: IGD[name],
                     hvRate: HVR[name],
                     hitRate: hitRate[name]
@@ -1739,7 +1740,7 @@
 
             const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
             const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
-            const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
+            //const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
             const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
             const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
             const maxHitRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hitRate)) : 0;
@@ -1758,9 +1759,9 @@
                     \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
                 </span>
             </td>
-            <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
             <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
         `;
+            //<td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
                 tableBody.appendChild(row);
             });
 
@@ -1779,9 +1780,9 @@
                     \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
                 </span>
             </td>
-            <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
             <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
         `;
+            //<td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
                 tableBody.appendChild(row);
             }
 
