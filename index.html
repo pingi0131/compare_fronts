@@ -816,10 +816,10 @@
         <select id="dataSourceSelect">
             <option value="WPM_MoQIO" data-min-year="2021" data-min-month="12" data-max-year="2024" data-max-month="11">
                 WPM MoQIO</option>
-            <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
-                WPM Hybrid</option>
             <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 WPM MoQA</option>
+            <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                WPM Hybrid</option>
             <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 ELS effect</option>
             <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
@@ -1276,7 +1276,7 @@
                             const fileName = filePath.split('/').pop();
                             const folder = filePath.split('/')[1].replace('%28M2M%29', '(M2M)'); // Use second-level folder
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
+                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
                                 name: displayFolder,
@@ -1376,7 +1376,7 @@
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || folder === 'Our method') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
+                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
                 data.color = newColor;
                 data.opacity = 1;
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
@@ -2156,8 +2156,8 @@
                 data: data,
                 backgroundColor: color,
                 borderColor: color,
-                pointRadius: 5,
-                hoverRadius: 5, // 確保懸停時點大小不變
+                pointRadius: 2,
+                hoverRadius: 2, // 確保懸停時點大小不變
                 showLine: true,
                 fill: false,
                 tension: 0,
@@ -2177,7 +2177,7 @@
                     backgroundColor: '#000000',
                     borderColor: '#000000',
                     pointRadius: 1,
-                    hoverRadius: 5, // 確保懸停時點大小不變
+                    hoverRadius: 2, // 確保懸停時點大小不變
                     showLine: true,
                     fill: false,
                     tension: 0,
@@ -2254,7 +2254,7 @@
                             pan: {
                                 enabled: true,
                                 mode: 'xy',
-                                threshold: 5,
+                                threshold: 2,
                             },
                             zoom: {
                                 wheel: { enabled: true },
