@@ -818,6 +818,8 @@
                 WPM MoQIO</option>
             <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 WPM Hybrid</option>
+            <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                WPM MoQA</option>
             <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 ELS effect</option>
             <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
@@ -1215,10 +1217,17 @@
                 ];
             } else if (dataSource === 'WPM_MoQIO') {
                 csvFiles = [
-                    `MoQIO/Our method/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
+                    `MoQIO/MoQIO/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
                     `MoQIO/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `MoQIO/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `MoQIO/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
+                ];
+            } else if (dataSource === 'WPM_MoQA') {
+                csvFiles = [
+                    `WPM-MoQA/MoQA/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
                 ];
             }
 
