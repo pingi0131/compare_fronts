@@ -6,7 +6,7 @@
     <title>fronts' compare & metrics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
-    <script
+    <script>
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.2/dist/chartjs-plugin-dragdata.min.js"></script>
     <script>
         // 偵測是否為舊瀏覽器（缺少 ES6 關鍵功能）
@@ -1202,7 +1202,7 @@
             } else if (dataSource === 'Hybrid_ELS_BA') {
                 csvFiles = [
                     `Hybrid_BA_ELS/with ELS/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `Htbrid_BA_ELS/w.o. ELS/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `Hybrid_BA_ELS/w.o. ELS/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                 ];
             } else if (dataSource === 'WPM_Hybird') {
                 csvFiles = [
