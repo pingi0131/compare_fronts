@@ -6,7 +6,7 @@
     <title>fronts' compare & metrics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
-    <script>
+    <script
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.2/dist/chartjs-plugin-dragdata.min.js"></script>
     <script>
         // 偵測是否為舊瀏覽器（缺少 ES6 關鍵功能）
@@ -814,6 +814,8 @@
 <body>
     <div class="data-source-container">
         <select id="dataSourceSelect">
+            <option value="WPM_MoQIO" data-min-year="2021" data-min-month="12" data-max-year="2024" data-max-month="11">
+                WPM MoQIO</option>
             <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 WPM Hybrid</option>
             <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
@@ -1194,7 +1196,7 @@
             let csvFiles = [];
             if (dataSource === 'EPM_H-MoQTS') {
                 csvFiles = [
-                    `H-MoQTS/MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
+                    `H-MoQTS/Our method/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
                     `H-MoQTS/SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `H-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `H-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
@@ -1211,8 +1213,15 @@
                     `WPM-Hybrid/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-Hybrid/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
                 ];
+            } else if (dataSource === 'WPM_MoQIO') {
+                csvFiles = [
+                    `MoQIO/Our method/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
+                    `MoQIO/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `MoQIO/MOEAD/MOEAD_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `MoQIO/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`
+                ];
             }
-            
+
             try {
                 datasetMap.clear();
                 document.getElementById('fileListContainer').innerHTML = '';
@@ -2138,8 +2147,8 @@
                 data: data,
                 backgroundColor: color,
                 borderColor: color,
-                pointRadius: 2,
-                hoverRadius: 2, // 確保懸停時點大小不變
+                pointRadius: 5,
+                hoverRadius: 5, // 確保懸停時點大小不變
                 showLine: true,
                 fill: false,
                 tension: 0,
@@ -2158,12 +2167,12 @@
                     data: combinedData,
                     backgroundColor: '#000000',
                     borderColor: '#000000',
-                    pointRadius: 5,
+                    pointRadius: 1,
                     hoverRadius: 5, // 確保懸停時點大小不變
                     showLine: true,
                     fill: false,
                     tension: 0,
-                    borderWidth: 2,
+                    borderWidth: 1,
                     borderDash: [5, 5],
                     dragData: false
                 });
