@@ -820,7 +820,8 @@
                 WPM MoQA</option>
             <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
                 WPM Hybrid</option>
-            <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+            <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025"
+                data-max-month="4">
                 ELS effect</option>
             <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
                 EPM H-MoQTS</option>
@@ -1725,7 +1726,6 @@
 
             const normalized = normalize(rawData);
             const HV = calcHV(normalized);
-            //const GD = calcGD(normalized, "Combined Front");
             const IGD = calcIGD(normalized, "Combined Front");
             const hitRateResult = calculateHitRate(normalized);
             const hitRate = hitRateResult.percentages;
@@ -1751,7 +1751,6 @@
                     customName: name === "Combined Front" ? "Combined" : filteredMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'),
                     points: pointCount,
                     hv: HV[name],
-                    //gd: GD[name],
                     igd: IGD[name],
                     hvRate: HVR[name],
                     hitRate: hitRate[name]
@@ -1763,9 +1762,18 @@
                 }
             }
 
+            // Sort metricsData to place MoQTS, MoQA, with ELS, Our method, MoQIO at the bottom
+            const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO'];
+            metricsData.sort((a, b) => {
+                const aIsPriority = priorityFolders.includes(a.customName);
+                const bIsPriority = priorityFolders.includes(b.customName);
+                if (aIsPriority && !bIsPriority) return 1; // a is priority, move to bottom
+                if (!aIsPriority && bIsPriority) return -1; // b is priority, move to bottom
+                return 0; // Maintain relative order for non-priority or both priority
+            });
+
             const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
             const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
-            //const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
             const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
             const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
             const maxHitRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hitRate)) : 0;
@@ -1786,7 +1794,6 @@
             </td>
             <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
         `;
-            //<td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
                 tableBody.appendChild(row);
             });
 
@@ -1807,7 +1814,6 @@
             </td>
             <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
         `;
-            //<td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
                 tableBody.appendChild(row);
             }
 
