@@ -2203,13 +2203,13 @@
 
             // Get selected date and format title
             const selectedDate = document.querySelector('.date-entry.selected');
-            let title = 'Compared of Multiple Algorithms';
+            let title = 'Comparison of Multiple Algorithms';
             if (selectedDate) {
                 const year = selectedDate.dataset.year;
                 const month = selectedDate.dataset.month;
                 const monthNames = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
                 const monthName = monthNames[parseInt(month, 10) - 1] || 'Unknown';
-                title = `Compared of Multiple Algorithms in ${monthName} ${year}`;
+                title = `Comparison of Multiple Algorithms in ${monthName} ${year}`;
             }
             chartInstance = new Chart(ctx, {
                 type: 'scatter',
