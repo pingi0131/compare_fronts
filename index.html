@@ -1772,7 +1772,7 @@
                 return 0; // Maintain relative order for non-priority or both priority
             });
 
-            const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
+            const maxNDS = metricsData.length > 0 ? 0 : 0;
             const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
             const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
             const maxHVRate = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hvRate)) : 0;
