@@ -613,7 +613,11 @@
             padding: 10px;
             border-radius: 5px;
         }
-
+.point-radius-input {
+    margin-left: 6px;
+    padding: 2px 4px;
+    vertical-align: middle;
+}
         .color-picker-tabs {
             display: grid;
             grid-template-columns: repeat(3, 115px);
@@ -808,6 +812,8 @@
             /* 防止換行 */
             font-family: "標楷體", "Times New Roman", serif;
         }
+
+
     </style>
 </head>
 
@@ -841,22 +847,22 @@
         <h1>多檔前緣比較圖 指標計算<a href="https://pingi0131.github.io/compare_fronts/guide.html" class="help-link">Help</a></h1>
 
         <div class="range-controls">
-            <label class="math-label">\( f_1(x) \)</label>
-            <input type="number" id="minRisk" placeholder="Min" step="1">
-            <button class="reset-range-btn" onclick="resetField('minRisk')"></button>
-            <span class="tilde">-</span>
-            <input type="number" id="maxRisk" placeholder="Max" step="1">
-            <button class="reset-range-btn" onclick="resetField('maxRisk')"></button>
-              
-            <label>\( f_2(x) \)</label>
-            <input type="number" id="minProfit" placeholder="Min" step="1">
-            <button class="reset-range-btn" onclick="resetField('minProfit')"></button>
-            <span class="tilde">-</span>
-            <input type="number" id="maxProfit" placeholder="Max" step="1">
-            <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
-              
-            <button class="reset-btn" onclick="resetAllRanges()">All</button>
-        </div>
+    <label class="math-label">\( f_1(x) \)</label>
+    <input type="number" id="minRisk" placeholder="Min" step="1">
+    <button class="reset-range-btn" onclick="resetField('minRisk')"></button>
+    <span class="tilde">-</span>
+    <input type="number" id="maxRisk" placeholder="Max" step="1">
+    <button class="reset-range-btn" onclick="resetField('maxRisk')"></button>
+      
+    <label>\( f_2(x) \)</label>
+    <input type="number" id="minProfit" placeholder="Min" step="1">
+    <button class="reset-range-btn" onclick="resetField('minProfit')"></button>
+    <span class="tilde">-</span>
+    <input type="number" id="maxProfit" placeholder="Max" step="1">
+    <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
+      
+    <button class="reset-btn" onclick="resetAllRanges()">All</button>
+</div>
         <div id="fileListContainer" class="controls"></div>
         <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
         <div id="chart-container">
@@ -1279,12 +1285,13 @@
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
                             const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
-                            datasetMap.set(fileName, {
-                                name: displayFolder,
-                                data: parsed.sort((a, b) => a.x - b.x),
-                                color,
-                                simplifiedName: simplifiedFileName
-                            });
+datasetMap.set(fileName, {
+    name: displayFolder,
+    data: parsed.sort((a, b) => a.x - b.x),
+    color,
+    simplifiedName: simplifiedFileName,
+    pointRadius: 2 // Add default point radius
+});
                             addFileEntryUI(fileName, color);
                         }
                     } catch (fileError) {
@@ -1321,12 +1328,13 @@
         const maxRiskInput = document.getElementById('maxRisk');
         const minProfitInput = document.getElementById('minProfit');
         const maxProfitInput = document.getElementById('maxProfit');
-        const defaultRanges = {
-            minRisk: undefined,
-            maxRisk: undefined,
-            minProfit: undefined,
-            maxProfit: undefined
-        };
+const defaultRanges = {
+    minRisk: undefined,
+    maxRisk: undefined,
+    minProfit: undefined,
+    maxProfit: undefined,
+    pointRadiusInput: 2 // Default point radius
+};
         [minRiskInput, maxRiskInput, minProfitInput, maxProfitInput].forEach(input => {
             input.addEventListener('blur', () => {
                 if (datasetMap.size > 0) {
@@ -1376,17 +1384,20 @@
 
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
-            entries.forEach(([fileName, data], index) => {
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
-                data.color = newColor;
-                data.opacity = 1;
-                const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
-                if (entryDiv) {
-                    const colorPreview = entryDiv.querySelector('.color-preview-box-list');
-                    if (colorPreview) {
-                        colorPreview.style.backgroundColor = newColor;
-                        colorPreview.style.opacity = 1;
-                    }
+entries.forEach(([fileName, data], index) => {
+    const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || data.name === 'Our method' || data.name === 'MoQIO') ? '#FF0000' : defaultColors[index -1 % defaultColors.length] || '#000000';
+    data.color = newColor;
+    data.pointRadius = 2; // Reset point radius to default
+    const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
+    if (entryDiv) {
+        const colorPreview = entryDiv.querySelector('.color-preview-box-list');
+        if (colorPreview) {
+            colorPreview.style.backgroundColor = newColor;
+        }
+        const radiusInput = entryDiv.querySelector('.point-radius-input');
+        if (radiusInput) {
+            radiusInput.value = 2; // Update UI input
+        }
                     const modal = entryDiv.querySelector('.color-picker-modal');
                     if (modal) {
                         const hexInput = modal.querySelector('.hex-input');
@@ -1931,6 +1942,50 @@
                 });
             });
 
+const radiusInput = document.createElement('input');
+radiusInput.type = 'number';
+radiusInput.className = 'point-radius-input';
+radiusInput.min = '1';
+radiusInput.max = '12';
+radiusInput.step = '1';
+radiusInput.value = datasetMap.get(fileName).pointRadius || 2;
+radiusInput.style.width = '30px'; // Reduced from 60px
+radiusInput.style.height = '24px'; // Explicitly set height to make it smaller
+radiusInput.style.fontSize = '14px'; // Smaller font for better fit
+radiusInput.style.marginLeft = '6px';
+radiusInput.title = '點大小';
+radiusInput.addEventListener('blur', () => {
+    let value = parseFloat(radiusInput.value);
+    if (isNaN(value) || value < 0.5) {
+        value = 2;
+        radiusInput.value = 2;
+    } else if (value > 20) {
+        value = 20;
+        radiusInput.value = 20;
+    }
+    datasetMap.get(fileName).pointRadius = value;
+    if (datasetMap.size > 0) {
+        drawChart();
+    }
+});
+radiusInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        let value = parseFloat(radiusInput.value);
+        if (isNaN(value) || value < 0.5) {
+            value = 2;
+            radiusInput.value = 2;
+        } else if (value > 20) {
+            value = 20;
+            radiusInput.value = 20;
+        }
+        datasetMap.get(fileName).pointRadius = value;
+        if (datasetMap.size > 0) {
+            drawChart();
+        }
+    }
+});
+entry.appendChild(radiusInput);
+
             const updateColor = (hex, opacity = 1) => {
                 datasetMap.get(fileName).color = hex;
                 datasetMap.get(fileName).opacity = opacity;
@@ -2157,18 +2212,18 @@
             const ctx = document.getElementById('riskProfitChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             combinedFront = datasetMap.size >= 2 ? combineNonDominatedSets(datasetMap) : null;
-            const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name }]) => ({
-                label: name || fileName,
-                data: data,
-                backgroundColor: color,
-                borderColor: color,
-                pointRadius: 2,
-                hoverRadius: 2, // 確保懸停時點大小不變
-                showLine: true,
-                fill: false,
-                tension: 0,
-                dragData: false
-            }));
+const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name, pointRadius }]) => ({
+    label: name || fileName,
+    data: data,
+    backgroundColor: color,
+    borderColor: color,
+    pointRadius: pointRadius || 2, // Use per-algorithm point radius
+    hoverRadius: pointRadius || 2, // Match hover radius to point radius
+    showLine: true,
+    fill: false,
+    tension: 0,
+    dragData: false
+}));
             if (combinedFront && combinedFront.risk.length > 0) {
                 const combinedData = [];
                 for (let i = 0; i < combinedFront.risk.length; i++) {
