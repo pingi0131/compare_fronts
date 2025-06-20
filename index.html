@@ -244,6 +244,7 @@
             width: 60px;
             padding: 3px;
             font-size: 16px;
+            font-family: 'Times New Roman';
             border: 1px solid #ccc;
             border-radius: 4px;
             text-align: center;
@@ -258,7 +259,7 @@
             /* 減少按鈕內邊距 */
             cursor: pointer;
             font-size: 16px;
-            font-family: '標楷體', 'PMingLiU', serif;
+            font-family: '標楷體', 'Times New Roman', serif;
             width: 30px;
             height: 24px;
             display: flex;
@@ -290,6 +291,7 @@
         }
 
         .data-source-container {
+            font-family: 'Times New Roman', Times, serif;
             position: fixed;
             top: 10px;
             right: 0px;
@@ -309,7 +311,7 @@
             width: 170px;
             background-color: #fff;
             cursor: pointer;
-            font-family: '標楷體', 'Times New Roman', serif;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         .data-source-container select:focus {
@@ -410,7 +412,7 @@
         }
 
         .help-link {
-            font-family: '標楷體', 'PMingLiU', serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 30px;
             /* 與 .range-controls 的字體大小一致 */
             color: #9bc5f2;
@@ -423,17 +425,22 @@
             /* 與 <h1> 文字對齊 */
         }
 
+        .help-link:active {
+            font-size: 80%;
+        }
+
         .help-link:hover {
             color: #0056b3;
             /* 懸停時變深，與 .reset-btn:hover 一致 */
-            text-decoration: underline;
-            /* 懸停時添加下劃線 */
 
         }
 
+        
+
         .help-link:hover::after {
             content: "使用手冊";
-            font-size: 30px;
+            font-family: '標楷體', 'Times New Roman', serif;
+            font-size: 26px;
             color: black;
             padding: 5px;
             border-radius: 5px;
@@ -446,6 +453,7 @@
         .range-controls {
             font-size: 20px;
             margin: 12px 0;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         .controls input[type="file"] {
@@ -456,7 +464,7 @@
         .range-controls input[type="number"],
         .range-controls button {
             font-size: 18px;
-            font-family: "標楷體", "PMingLiU", serif;
+            font-family: "標楷體", "Times New Roman", serif;
             font-weight: bold;
         }
 
@@ -517,9 +525,12 @@
         input[type="text"],
         input[type="number"] {
             padding: 2px 4px;
+            /*font-family: 'Times New Roman', Times, serif;
+            font-size: 0.7em;*/
         }
 
         input[type="number"] {
+            font-family: 'Times New Roman', Times, serif;
             width: 80px;
             padding: 2px 4px;
             font-size: 0.9em;
@@ -549,6 +560,17 @@
             background-color: #0056b3;
         }
 
+        .show-table-btn {
+            display: none; 
+            font-size: 16px; 
+            font-family: '標楷體', 'Times New Roman', serif;
+            background-color:#007BFF;
+        }
+
+        .show-table-btn:hover {
+            background-color:#0056b3;
+        }
+
         .metrics-results {
             margin-top: 20px;
             font-family: monospace;
@@ -558,12 +580,22 @@
             white-space: pre;
         }
 
-        #metricsTable {
-            font-family: monospace;
-            font-size: 16px;
+        #metricsTable {     /* 精緻表格預設字體大小 */
+            font-family:'Times New Roman', Times, serif;
+            font-size: 24px;
+            font-weight: 500;
             text-align: center;
             table-layout: fixed;
             width: 100%;
+        }
+
+        #metricsTable td:nth-child(5) {
+            font-size: 19px; /* Hit Rate 欄位專用字體大小 */
+        }
+
+        #metricsTable td:nth-child(1) {
+            font-weight: 800;
+            font-size: 20px;
         }
 
         #metricsTable th,
@@ -577,7 +609,7 @@
 
         #metricsTable th {
             background-color: #f0f0f0;
-            font-weight: bold;
+            font-weight: 800;
         }
 
         #metricsTable th,
@@ -869,13 +901,13 @@
             <canvas id="riskProfitChart"></canvas>
         </div>
         <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
-        <button id="showTableBtn" class="reset-btn" style="display: none; font-size: 14px;">精緻表格</button>
+        <button id="showTableBtn" class="show-table-btn">精緻表格</button>
         <div id="metricsTableContainer" style="display: none; margin-top: 20px;">
             <table id="metricsTable" border="1"
                 style="border-collapse: collapse; width: 100%; max-width: 960px; margin: 0 auto;">
                 <thead>
                     <tr>
-                        <th>前緣名稱</th>
+                        <th>Name</th>
                         <th>#NDS</th>
                         <th>HV</th>
                         <th>HV Rate</th>
@@ -1802,7 +1834,7 @@
             <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
             <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
                 ${data.hitRate.toFixed(2)}%
-                <span style="font-size: 0.7em; vertical-align: middle;">
+                <span style="font-size: 0.7em; vertical-align: middle; font-family: 'Times New Roman', Times, serif;">
                     \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
                 </span>
             </td>
