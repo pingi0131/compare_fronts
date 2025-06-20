@@ -1,0 +1,10 @@
+Non-Dominant Set,Risk,Profit,TrendRaio,# of Portfolio,Portfolio{%}
+
+
+time:,0.03814140199999999786 s
+fitness:,250100
+#in front:,0
+generation:,250
+N (#sub_problem):,100
+H (#lambda),99
+T (#neighbor):,10
