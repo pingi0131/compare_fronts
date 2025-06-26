@@ -3,11 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>fronts' compare & metrics</title>
+    <title>Fronts' Compare & Metrics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.2/dist/chartjs-plugin-dragdata.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         // 偵測是否為舊瀏覽器（缺少 ES6 關鍵功能）
         if (!window.Promise || !Array.prototype.find) {
@@ -219,287 +220,9 @@
         body {
             font-family: '標楷體', 'Times New Roman', serif;
             padding: 28px;
-            display: flex;
         }
 
-        .date-inputs {
-            position: fixed;
-            top: 45px;
-            right: 0px;
-            /* 與側邊欄觸發器對齊 */
-            display: flex;
-            align-items: center;
-            /*gap: 10px;*/
-            background-color: #f0f0f0;
-            /*padding: 6px;
-            border: 1px solid #ccc;
-            /*border-radius: 4px;*/
-            z-index: 1002;
-            /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
-            border-radius: 4px;
-            /* 可選：保持圓角 */
-        }
-
-        .date-inputs input[type="number"] {
-            width: 60px;
-            padding: 3px;
-            font-size: 16px;
-            font-family: 'Times New Roman';
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-align: center;
-            height: 24px;
-        }
-
-        .date-inputs button {
-            background-color: #f0f0f0;
-            color: #ffffff;
-            border: none;
-            padding: 1px 1px;
-            /* 減少按鈕內邊距 */
-            cursor: pointer;
-            font-size: 16px;
-            font-family: '標楷體', 'Times New Roman', serif;
-            width: 30px;
-            height: 24px;
-            display: flex;
-            /* 使用 flex 佈局 */
-            justify-content: center;
-            /* 水平居中 */
-            align-items: center;
-            /* 垂直居中 */
-            border-radius: 4px;
-            /* 保持圓角 */
-        }
-
-        .date-inputs button:hover {
-            background-color: #ccc;
-        }
-
-        .date-inputs button:hover::after {
-            background-color: #ffffff;
-            content: "Load";
-            position: absolute;
-            top: 100%;
-            right: 0%;
-            font-size: 20px;
-            color: black;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-            white-space: nowrap;
-        }
-
-        .data-source-container {
-            font-family: 'Times New Roman', Times, serif;
-            position: fixed;
-            top: 10px;
-            right: 0px;
-            display: flex;
-            align-items: center;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            z-index: 1003;
-        }
-
-        .data-source-container select {
-            padding: 3px;
-            font-size: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            height: 35px;
-            width: 170px;
-            background-color: #fff;
-            cursor: pointer;
-            font-family: 'Times New Roman', Times, serif;
-        }
-
-        .data-source-container select:focus {
-            outline: none;
-            border-color: #007BFF;
-        }
-
-        /* Sidebar styles */
-        .sidebar {
-            top: 80px;
-            width: 110px;
-            height: calc(100vh - 122px);
-            /* Adjust height to fit */
-            overflow-y: auto;
-            background-color: #f0f0f0;
-            border-top: 1px solid #ccc;
-            /* 添加上邊框 */
-            border-bottom: 1px solid #ccc;
-            /* 添加下邊框 */
-            border-left: 1px solid #ccc;
-            padding: 10px;
-            position: fixed;
-            right: -110px;
-            /* Hidden by default */
-            transition: right 0.3s ease;
-            /* Smooth sliding */
-            border-radius: 5px;
-            z-index: 1000;
-        }
-
-        .sidebar.visible {
-            right: 0;
-            /* Visible when hovered */
-        }
-
-        .sidebar-trigger {
-            position: fixed;
-            right: 0;
-            top: 28px;
-            width: 20px;
-            /* Trigger area */
-            height: calc(100vh - 56px);
-            background: transparent;
-            z-index: 1001;
-            cursor: pointer;
-        }
-
-        .date-entry {
-            padding: 9px;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-bottom: 4px;
-            font-size: 20px;
-            /* 默認字體大小 */
-            text-align: center;
-        }
-
-        .date-entry:hover {
-            background-color: #e0e0e0;
-            font-size: 21px;
-            /* 懸停時略微放大 */
-        }
-
-        .date-entry:active {
-            transform: scale(0.9);
-        }
-
-        .date-entry.selected {
-            background-color: #007BFF;
-            color: white;
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-
-
-        /* Customize link styles */
-        .menu-link {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 30px;
-            color: #9bc5f2;
-            text-decoration: none;
-            margin-left: 10px;
-            /* Consistent spacing */
-            vertical-align: middle;
-            position: relative;
-            /* Anchor for absolute tooltip */
-            display: inline-block;
-            /* Prevent layout shift */
-        }
-
-        .menu-link:active {
-            font-size: 80%;
-        }
-
-        .menu-link:hover {
-            color: #0056b3;
-        }
-
-        .menu-link:hover::after {
-            content: "上傳自己的前緣";
-            font-family: '標楷體', 'Times New Roman', serif;
-            font-size: 26px;
-            color: black;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-            white-space: nowrap;
-            text-decoration: none;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%) translateY(-5px);
-            /* align middle with link */
-            bottom: 100%;
-            /* Position above the link */
-            z-index: 1005;
-            /* Above other elements */
-        }
-
-        /* Main content */
-        .main-content {
-            margin-right: 20px;
-            /* Space for trigger */
-            width: calc(100% - 20px);
-        }
-
-        #chart-container {
-            width: 100%;
-            max-width: 960px;
-            aspect-ratio: 16 / 10;
-            margin: 20px auto 0;
-            display: none;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: auto !important;
-        }
-
-        h1 {
-            margin-top: 0px;
-            margin-bottom: 20px;
-        }
-
-        /* Help link styles */
-        .help-link {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 30px;
-            color: #9bc5f2;
-            text-decoration: none;
-            margin-left: 10px;
-            vertical-align: middle;
-            position: relative;
-            /* Anchor for absolute tooltip */
-            display: inline-block;
-            /* Prevent layout shift */
-        }
-
-        .help-link:active {
-            font-size: 80%;
-        }
-
-        .help-link:hover {
-            color: #0056b3;
-        }
-
-        .help-link:hover::after {
-            content: "使用手冊";
-            font-family: '標楷體', 'Times New Roman', serif;
-            font-size: 26px;
-            color: black;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-            white-space: nowrap;
-            text-decoration: none;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%) translateY(-5px);
-            /* align middle with link */
-            bottom: 100%;
-            /* Position above the link */
-            z-index: 1005;
-            /* Above other elements */
-        }
-
-        .controls,
-        .range-controls {
+        .controls {
             font-size: 20px;
             margin: 12px 0;
             font-family: 'Times New Roman', Times, serif;
@@ -507,6 +230,12 @@
 
         .controls input[type="file"] {
             font-size: 18px;
+        }
+
+        .range-controls {
+            font-size: 20px;
+            margin: 12px 0;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         .range-controls label,
@@ -567,6 +296,33 @@
             margin: 6px 0;
         }
 
+        #uploadBtn {
+            background-color: #d3d3d3;
+            /* Light gray */
+            color: #333333;
+            /* Dark text for contrast */
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 18px;
+            font-family: '標楷體', 'Times New Roman', serif;
+            transition: background-color 0.1s ease, transform 0.1s ease;
+            /* Smooth transitions */
+        }
+
+        #uploadBtn:hover {
+            background-color: #b0b0b0;
+            /* Slightly darker gray on hover */
+        }
+
+        #uploadBtn:active {
+            background-color: #999999;
+            /* Darker gray when pressed */
+            transform: scale(0.85);
+            /* Scale to 0.8x size */
+        }
+
         .math-label {
             font-size: 28px;
         }
@@ -574,8 +330,6 @@
         input[type="text"],
         input[type="number"] {
             padding: 2px 4px;
-            /*font-family: 'Times New Roman', Times, serif;
-            font-size: 0.7em;*/
         }
 
         input[type="number"] {
@@ -609,6 +363,75 @@
             background-color: #0056b3;
         }
 
+        .reset-allrange-btn {
+            margin-left: 4px;
+            background-color: #007BFF;
+        }
+
+        .reset-allrange-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .reset-allrange-btn:hover::after {
+            content: "reset all range";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: black;
+            padding: 5px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+        }
+
+        /* Go Back link styles */
+        .goback-link {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 30px;
+            color: #9bc5f2;
+            text-decoration: none;
+            margin-left: 10px;
+            vertical-align: middle;
+            position: relative;
+            /* Anchor for absolute tooltip */
+            display: inline-block;
+            /* Prevent layout shift */
+        }
+
+        .goback-link:active {
+            font-size: 80%;
+        }
+
+        .goback-link:hover {
+            color: #0056b3;
+        }
+
+
+
+        .goback-link:hover::after {
+            content: "返回資料庫";
+            font-family: '標楷體', 'Times New Roman', serif;
+            font-size: 26px;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            text-decoration: none;
+            position: absolute;
+            bottom: 100%;
+            /* Position above the link */
+            left: 50%;
+            /* Center horizontally */
+            transform: translateX(-50%) translateY(-5px);
+            /* Center and offset vertically */
+            z-index: 1005;
+            /* Above other elements */
+        }
+
         .show-table-btn {
             display: none;
             font-size: 16px;
@@ -630,7 +453,6 @@
         }
 
         #metricsTable {
-            /* 精緻表格預設字體大小 */
             font-family: 'Times New Roman', Times, serif;
             font-size: 24px;
             font-weight: 500;
@@ -641,7 +463,6 @@
 
         #metricsTable td:nth-child(5) {
             font-size: 19px;
-            /* Hit Rate 欄位專用字體大小 */
         }
 
         #metricsTable td:nth-child(1) {
@@ -686,7 +507,6 @@
             background-color: #e0e0e0;
         }
 
-        /* Custom Color Picker Modal Styles */
         .color-picker-modal {
             position: absolute;
             background: white;
@@ -713,16 +533,13 @@
         .color-picker-tabs button {
             padding: 5px;
             background: #f0f0f0;
-            /* 恢復默認背景色 */
             color: #333333;
-            /* 恢復默認文字顏色 */
             border: none;
             cursor: pointer;
             font-size: 14px;
             border-radius: 3px 3px 0 0;
             text-align: center;
             transition: background-color 0.2s ease;
-            /* 保持平滑過渡 */
         }
 
         .color-picker-content input[type="color"] {
@@ -782,10 +599,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            /* Keep horizontal gap as is or adjust as needed */
             font-size: 14px;
             margin-bottom: 4px;
-            /* Reduced from 8px to 4px for less vertical spacing */
             width: 100%;
         }
 
@@ -828,12 +643,6 @@
             background-color: #0056b3;
         }
 
-        .rgb-inputs input {
-            width: 60px;
-            padding: 3px;
-            font-size: 14px;
-        }
-
         .rgb-preview-box {
             width: 30px;
             height: 30px;
@@ -842,14 +651,11 @@
             vertical-align: middle;
             border-radius: 4px;
             flex-shrink: 0;
-            /* Prevent preview box from shrinking */
         }
 
         .rgb-slider {
             flex: 1;
-            /* Take remaining space */
             min-width: 50px;
-            /* Ensure slider is usable */
             vertical-align: middle;
         }
 
@@ -859,9 +665,7 @@
             font-size: 20px;
             vertical-align: middle;
             flex-shrink: 0;
-            /* Prevent number input from shrinking */
             text-align: right;
-            /* 文字靠右對齊 */
         }
 
         .color-preview-box {
@@ -888,50 +692,44 @@
 
         .hexrgb-inputs label span {
             font-size: 24px;
-            /* 保持字體大小 */
             display: inline-block;
-            /* 讓它可以有寬度屬性 */
             width: auto;
-            /* 自動寬度根據內容 */
             white-space: nowrap;
-            /* 防止換行 */
             font-family: "標楷體", "Times New Roman", serif;
+        }
+
+        #chart-container {
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 16 / 10;
+            margin: 20px auto;
+            display: none;
+            text-align: center;
+        }
+
+        #metricsTableContainer {
+            width: 100%;
+            max-width: 960px;
+            margin: 20px auto;
+            display: none;
+            text-align: center;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        h1 {
+            margin-top: 0px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div class="data-source-container">
-        <select id="dataSourceSelect">
-            <option value="WPM_MoQIO" data-min-year="2021" data-min-month="12" data-max-year="2024" data-max-month="11">
-                WPM MoQIO</option>
-            <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
-                WPM MoQA</option>
-            <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
-                WPM Hybrid</option>
-            <option value="Hybrid_ELS_BA" data-min-year="2021" data-min-month="12" data-max-year="2025"
-                data-max-month="4">
-                ELS effect</option>
-            <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
-                EPM H-MoQTS</option>
-        </select>
-    </div>
-
-    <div class="date-inputs">
-        <input type="number" id="yearInput" placeholder="Year" min="2023" max="2025" step="1">
-        <input type="number" id="monthInput" placeholder="Month" min="1" max="12" step="1">
-        <button id="loadDateBtn" class="reset-btn">✔️</button>
-    </div>
-    <div class="sidebar-trigger" id="sidebarTrigger"></div>
-    <div class="sidebar" id="dateSidebar">
-        <!-- Date entries will be populated by JavaScript -->
-    </div>
     <div class="main-content">
-        <h1>多檔前緣比較圖 指標計算<a href="https://pingi0131.github.io/compare_fronts/guide.html" class="help-link">Help</a>
-            <a href="https://pingi0131.github.io/compare_fronts/upload_custom_front.html"
-                class="menu-link">Customize</a>
-        </h1>
-
+        <h1>多檔前緣比較圖 指標計算（自己上傳檔案）<a href="index.html" class="goback-link">Go back! Go back!</a></h1>
         <div class="range-controls">
             <label class="math-label">\( f_1(x) \)</label>
             <input type="number" id="minRisk" placeholder="Min" step="1">
@@ -947,7 +745,13 @@
             <input type="number" id="maxProfit" placeholder="Max" step="1">
             <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
               
-            <button class="reset-btn" onclick="resetAllRanges()">All</button>
+            <button class="reset-allrange-btn" onclick="resetAllRanges()">All</button>
+        </div>
+        <div class="controls">
+            <label for="csvFileInput">選擇 CSV 或 Excel 檔案：</label>
+            <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" multiple style="display: none;" />
+            <button id="uploadBtn">選擇檔案</button>
+            <span id="fileCount">目前有 0 個檔案</span>
         </div>
         <div id="fileListContainer" class="controls"></div>
         <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
@@ -956,7 +760,7 @@
         </div>
         <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
         <button id="showTableBtn" class="show-table-btn">精緻表格</button>
-        <div id="metricsTableContainer" style="display: none; margin-top: 20px;">
+        <div id="metricsTableContainer">
             <table id="metricsTable" border="1"
                 style="border-collapse: collapse; width: 100%; max-width: 960px; margin: 0 auto;">
                 <thead>
@@ -979,6 +783,7 @@
         const datasetMap = new Map();
         const defaultColors = ['#0000FF', '#FFA500', '#888888', '#00AA00'];
         let combinedFront = null;
+
         let initialRanges = {
             minRisk: undefined,
             maxRisk: undefined,
@@ -1009,359 +814,24 @@
             return filteredMap;
         }
 
-        // Generate date list
-        function generateDateList() {
-            const dataSourceSelect = document.getElementById('dataSourceSelect');
-            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-            const minYear = parseInt(selectedOption.dataset.minYear);
-            const maxYear = parseInt(selectedOption.dataset.maxYear);
-            const minMonth = parseInt(selectedOption.dataset.minMonth);
-            const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
 
-            const dates = [];
-
-            for (let year = maxYear; year >= minYear; year--) {
-
-                // Apply specific min/max only for minYear and maxYear
-                let maxMonthForYear = year === maxYear ? maxMonth : 12;
-                let minMonthForYear = year === minYear ? minMonth : 1;
-
-                for (let month = maxMonthForYear; month >= minMonthForYear; month--) {
-                    const paddedMonth = month.toString().padStart(2, '0');
-                    dates.push(`${year}_${paddedMonth}`);
-                }
-            }
-
-            return dates;
-        }
-
-        // Populate sidebar with date entries
-        function populateDateSidebar() {
-            const sidebar = document.getElementById('dateSidebar');
-            const dates = generateDateList();
-            sidebar.innerHTML = ''; // Clear existing entries
-            dates.forEach(date => {
-                const [year, month] = date.split('_');
-                const entry = document.createElement('div');
-                entry.className = 'date-entry';
-                entry.textContent = date;
-                entry.dataset.year = year;
-                entry.dataset.month = month;
-                entry.addEventListener('click', () => {
-                    // Remove 'selected' class from all entries
-                    sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
-                    // Add 'selected' class to clicked entry
-                    entry.classList.add('selected');
-                    // Update date input fields
-                    const yearInput = document.getElementById('yearInput');
-                    const monthInput = document.getElementById('monthInput');
-                    yearInput.value = year;
-                    monthInput.value = parseInt(month, 10); // Remove leading zero for display
-                    // Load files for the selected date
-                    loadFilesFromDataDir(year, month);
-                });
-                sidebar.appendChild(entry);
-            });
-        }
-
-        function initializeSidebarHover() {
-            const sidebar = document.getElementById('dateSidebar');
-            const trigger = document.getElementById('sidebarTrigger');
-
-            trigger.addEventListener('mouseenter', () => {
-                sidebar.classList.add('visible');
-            });
-
-            sidebar.addEventListener('mouseenter', () => {
-                sidebar.classList.add('visible');
-            });
-
-            sidebar.addEventListener('mouseleave', (e) => {
-                if (!e.relatedTarget || (e.relatedTarget !== trigger && !trigger.contains(e.relatedTarget))) {
-                    sidebar.classList.remove('visible');
-                }
-            });
-
-            trigger.addEventListener('mouseleave', (e) => {
-                if (!e.relatedTarget || (e.relatedTarget !== sidebar && !sidebar.contains(e.relatedTarget))) {
-                    sidebar.classList.remove('visible');
-                }
-            });
-        }
-
-        function initializeDataSourceSelect() {
-            const dataSourceSelect = document.getElementById('dataSourceSelect');
-            dataSourceSelect.addEventListener('change', () => {
-                // 刷新側邊欄的日期列表
-                populateDateSidebar();
-
-                // 清空圖表和相關 UI 元素
-                datasetMap.clear();
-                document.getElementById('fileListContainer').innerHTML = '';
-                document.getElementById('chart-container').style.display = 'none';
-                document.getElementById('metricsOutput').style.display = 'none';
-                document.getElementById('metricsTableContainer').style.display = 'none';
-                document.getElementById('showTableBtn').style.display = 'none';
-                document.getElementById('resetColorsBtn').style.display = 'none';
-                if (chartInstance) {
-                    chartInstance.destroy();
-                    chartInstance = null;
+            for (const file of files) {
+                // Skip if file already exists in datasetMap to avoid overwriting
+                if (datasetMap.has(file.name)) {
+                    console.log(`檔案 ${file.name} 已存在，跳過重複上傳。可能是檔名相同～`);
+                    continue;
                 }
 
-                // 更新輸入框的限制條件
-                const yearInput = document.getElementById('yearInput');
-                const monthInput = document.getElementById('monthInput');
-                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                const minYear = parseInt(selectedOption.dataset.minYear);
-                const maxYear = parseInt(selectedOption.dataset.maxYear);
-                const minMonth = parseInt(selectedOption.dataset.minMonth);
-                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+                try {
+                    const fileName = file.name;
+                    const extension = fileName.split('.').pop().toLowerCase();
+                    let parsed = [];
 
-                // 重置輸入框為空或預設值
-                yearInput.value = '';
-                monthInput.value = '';
-
-                // 更新年份和月份的限制
-                yearInput.min = minYear;
-                yearInput.max = maxYear;
-                monthInput.min = minMonth;
-                monthInput.max = maxMonth;
-
-                // 清空側邊欄的選中狀態
-                const sidebar = document.getElementById('dateSidebar');
-                sidebar.querySelectorAll('.date-entry').forEach(entry => {
-                    entry.classList.remove('selected');
-                });
-            });
-        }
-
-        // Initialize menu toggle
-        function initializeMenuToggle() {
-            const menuToggle = document.getElementById('menuToggle');
-            const menuContent = document.getElementById('menuContent');
-
-            menuToggle.addEventListener('click', () => {
-                menuContent.classList.toggle('active');
-            });
-
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!menuContent.contains(e.target) && e.target !== menuToggle) {
-                    menuContent.classList.remove('active');
-                }
-            });
-        }
-
-        // Call populateDateSidebar when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            populateDateSidebar();
-            initializeSidebarHover();
-            initializeDateInputs();
-            initializeDataSourceSelect();
-            initializeMenuToggle(); // Ensure menu toggle is initialized
-        });
-
-        // 初始化輸入框事件監聽器
-        function initializeDateInputs() {
-            const yearInput = document.getElementById('yearInput');
-            const monthInput = document.getElementById('monthInput');
-            const loadDateBtn = document.getElementById('loadDateBtn');
-            const dataSourceSelect = document.getElementById('dataSourceSelect');
-
-            function updateInputConstraints() {
-                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                const minYear = parseInt(selectedOption.dataset.minYear);
-                const maxYear = parseInt(selectedOption.dataset.maxYear);
-                const minMonth = parseInt(selectedOption.dataset.minMonth);
-                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
-
-                // Set year input constraints
-                yearInput.min = minYear;
-                yearInput.max = maxYear;
-                yearInput.placeholder = `Year`;
-
-                // Set month input constraints based on year
-                const year = parseInt(yearInput.value) || maxYear;
-                let minMonthForYear = year === minYear ? minMonth : 1;
-                let maxMonthForYear = year === maxYear ? maxMonth : 12;
-
-                monthInput.min = minMonthForYear;
-                monthInput.max = maxMonthForYear;
-
-                // Adjust month input if out of range
-                const currentMonth = parseInt(monthInput.value);
-                if (currentMonth < minMonthForYear) {
-                    monthInput.value = minMonthForYear;
-                }
-                else if (currentMonth > maxMonthForYear) {
-                    monthInput.value = maxMonthForYear;
-                }
-            }
-
-            // Initialize constraints on page load
-            updateInputConstraints();
-
-            // Update constraints when dataset or year changes
-            dataSourceSelect.addEventListener('change', updateInputConstraints);
-            yearInput.addEventListener('input', updateInputConstraints);
-
-            // 點擊「載入」按鈕時觸發
-            loadDateBtn.addEventListener('click', () => {
-                let year = yearInput.value.trim();
-                let month = monthInput.value.trim().padStart(2, '0');
-
-                // 如果沒有輸入，預設為最大年份和最大月份
-                if (!year && (!month || month === '00')) {
-                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                    year = selectedOption.dataset.maxYear;
-                    const maxMonth = selectedOption.dataset.maxMonth;
-                    month = maxMonth.padStart(2, '0');
-                    yearInput.value = year;
-                    monthInput.value = parseInt(maxMonth);
-                }
-
-                if (validateDate(year, month)) {
-                    loadFilesFromDataDir(year, month);
-                    updateSidebarSelection(year, month);
-                } else {
-                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                    const minYear = selectedOption.dataset.minYear;
-                    const maxYear = selectedOption.dataset.maxYear;
-                    const minMonth = selectedOption.dataset.minMonth;
-                    const maxMonth = selectedOption.dataset.maxMonth;
-                    alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
-                }
-            });
-
-            // 按下 Enter 鍵時觸發
-            [yearInput, monthInput].forEach(input => {
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        let year = yearInput.value.trim();
-                        let month = monthInput.value.trim().padStart(2, '0');
-
-                        // 如果沒有輸入，預設為最大年份和最大月份
-                        if (!year && (!month || month === '00')) {
-                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                            year = selectedOption.dataset.maxYear;
-                            const maxMonth = selectedOption.dataset.maxMonth;
-                            month = maxMonth.padStart(2, '0');
-                            yearInput.value = year;
-                            monthInput.value = parseInt(maxMonth);
-                        }
-
-                        if (validateDate(year, month)) {
-                            loadFilesFromDataDir(year, month);
-                            updateSidebarSelection(year, month);
-                        } else {
-                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-                            const minYear = selectedOption.dataset.minYear;
-                            const maxYear = selectedOption.dataset.maxYear;
-                            const minMonth = selectedOption.dataset.minMonth;
-                            const maxMonth = selectedOption.dataset.maxMonth;
-                            alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
-                        }
-                    }
-                });
-            });
-        }
-
-        // 驗證年份和月份
-        function validateDate(year, month) {
-            const y = parseInt(year);
-            const m = parseInt(month);
-            if (isNaN(y) || isNaN(m)) return false;
-
-            const dataSourceSelect = document.getElementById('dataSourceSelect');
-            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-            const minYear = parseInt(selectedOption.dataset.minYear);
-            const maxYear = parseInt(selectedOption.dataset.maxYear);
-            const minMonth = parseInt(selectedOption.dataset.minMonth);
-
-            if (y < minYear || y > maxYear) return false;
-            if (m < 1 || m > 12) return false;
-
-            // Check minimum month for the starting year
-            if (y === minYear && m < minMonth) return false;
-
-            // Check maximum month for the year
-            const maxMonthAttr = selectedOption.dataset[`maxMonth${y}`];
-            const maxMonth = maxMonthAttr ? parseInt(maxMonthAttr) : 12;
-            if (m > maxMonth) return false;
-
-            return true;
-        }
-
-        // 更新側邊欄選中狀態
-        function updateSidebarSelection(year, month) {
-            const sidebar = document.getElementById('dateSidebar');
-            sidebar.querySelectorAll('.date-entry').forEach(entry => {
-                entry.classList.remove('selected');
-                if (entry.dataset.year === year && entry.dataset.month === month) {
-                    entry.classList.add('selected');
-                }
-            });
-        }
-
-        // Modified loadFilesFromDataDir to accept year and month parameters
-        async function loadFilesFromDataDir(year, month) {
-            if (!year || !month) {
-                alert('請選擇一個日期');
-                return;
-            }
-            const dataSource = document.getElementById('dataSourceSelect').value;
-            const paddedMonth = month.padStart(2, '0');
-            const pattern = `${year}_${paddedMonth}`;
-            let csvFiles = [];
-            if (dataSource === 'EPM_H-MoQTS') {
-                csvFiles = [
-                    `H-MoQTS/Our method/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
-                    `H-MoQTS/SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `H-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `H-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
-                ];
-            } else if (dataSource === 'Hybrid_ELS_BA') {
-                csvFiles = [
-                    `Hybrid_BA_ELS/with ELS/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `Hybrid_BA_ELS/w.o. ELS/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                ];
-            } else if (dataSource === 'WPM_Hybird') {
-                csvFiles = [
-                    `WPM-Hybrid/Our method/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-Hybrid/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-Hybrid/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
-                    `WPM-Hybrid/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                ];
-            } else if (dataSource === 'WPM_MoQIO') {
-                csvFiles = [
-                    `MoQIO/MoQIO/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
-                    `MoQIO/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `MoQIO/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
-                    `MoQIO/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                ];
-            } else if (dataSource === 'WPM_MoQA') {
-                csvFiles = [
-                    `WPM-MoQA/MoQA/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                    `WPM-MoQA/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
-                    `WPM-MoQA/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
-                ];
-            }
-
-            try {
-                datasetMap.clear();
-                document.getElementById('fileListContainer').innerHTML = '';
-
-                for (const filePath of csvFiles) {
-                    //alert(`${filePath}`)
-                    try {
-                        const fileResponse = await fetch(`https://pingi0131.github.io/compare_fronts/data/${filePath}`);
-                        if (!fileResponse.ok) {
-                            console.error(`無法讀取檔案 ${filePath}: ${fileResponse.status}`);
-                            continue;
-                        }
-
-                        const text = await fileResponse.text();
+                    if (extension === 'csv') {
+                        const text = await file.text();
                         const lines = text.split(/\r?\n/);
                         if (lines.length === 0) continue;
 
@@ -1369,11 +839,12 @@
                         const riskIndex = headers.findIndex(h => h.includes('risk'));
                         const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
 
-                        if (riskIndex === -1 || profitIndex === -1) continue;
+                        if (riskIndex === -1 || profitIndex === -1) {
+                            console.error(`檔案 ${fileName} 缺少 'risk' 或 'profit'/'return' 欄位`);
+                            continue;
+                        }
 
                         const parsedSet = new Set();
-                        const parsed = [];
-
                         for (let i = 1; i < lines.length; i++) {
                             const line = lines[i].trim();
                             if (!line) continue;
@@ -1388,51 +859,96 @@
                                 parsed.push({ x, y });
                             }
                         }
+                    } else if (extension === 'xlsx' || extension === 'xls') {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                        if (parsed.length > 0) {
-                            const fileName = filePath.split('/').pop();
-                            const folder = filePath.split('/')[1].replace('%28M2M%29', '(M2M)'); // Use second-level folder
-                            const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
-                            const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
-                            datasetMap.set(fileName, {
-                                name: displayFolder,
-                                data: parsed.sort((a, b) => a.x - b.x),
-                                color,
-                                simplifiedName: simplifiedFileName,
-                                pointRadius: 2 // Add default point radius
-                            });
-                            addFileEntryUI(fileName, color);
+                        if (json.length === 0) continue;
+
+                        const headers = json[0].map(h => h.toString().trim().toLowerCase());
+                        const riskIndex = headers.findIndex(h => h.includes('risk'));
+                        const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
+
+                        if (riskIndex === -1 || profitIndex === -1) {
+                            console.error(`檔案 ${fileName} 缺少 'risk' 或 'profit'/'return' 欄位`);
+                            continue;
                         }
-                    } catch (fileError) {
-                        console.error(`處理檔案 ${filePath} 時發生錯誤:`, fileError);
-                    }
-                }
 
-                if (datasetMap.size > 0) {
-                    drawChart(); // 繪製圖表
-                    document.getElementById('resetColorsBtn').style.display = 'inline-block';
-                    calculateMetrics();
-                } else {
-                    alert(`沒有成功載入任何符合 "${pattern}" 的有效 CSV 檔案`);
-                    // Clear and hide UI elements
-                    datasetMap.clear();
-                    document.getElementById('fileListContainer').innerHTML = '';
-                    document.getElementById('chart-container').style.display = 'none';
-                    document.getElementById('metricsOutput').style.display = 'none';
-                    document.getElementById('metricsTableContainer').style.display = 'none';
-                    document.getElementById('showTableBtn').style.display = 'none';
-                    document.getElementById('resetColorsBtn').style.display = 'none';
-                    if (chartInstance) {
-                        chartInstance.destroy();
-                        chartInstance = null;
+                        const parsedSet = new Set();
+                        for (let i = 1; i < json.length; i++) {
+                            const row = json[i];
+                            const x = parseFloat(row[riskIndex]);
+                            const y = parseFloat(row[profitIndex]);
+                            const key = `${x},${y}`;
+
+                            if (!isNaN(x) && !isNaN(y) && x > 0 && y > 0 && !parsedSet.has(key)) {
+                                parsedSet.add(key);
+                                parsed.push({ x, y });
+                            }
+                        }
+                    } else {
+                        console.error(`不支援的檔案格式: ${fileName}`);
+                        continue;
                     }
+
+                    if (parsed.length > 0) {
+                        const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
+                        const nameMappings = {
+                            'MOQTS': 'MoQTS',
+                            'MOEA': 'MOEA/D',
+                            'NSGA': 'NSGA-II',
+                            'EMOA': 'SMS-EMOA',
+                            'PAES': 'PAES',
+                            'MOPSO': 'MOPSO',
+                            'SPEA': 'SPEA2',
+                            'GA': 'GA',
+                            'GENE': 'GA',
+                        };
+                        const assignedKey = Object.keys(nameMappings).find(key =>
+                            fileName.toUpperCase().includes(key)
+                        );
+                        const assignedName = assignedKey ? nameMappings[assignedKey] : '';
+
+                        datasetMap.set(fileName, {
+                            name: assignedName,
+                            data: parsed.sort((a, b) => a.x - b.x),
+                            color,
+                            simplifiedName: fileName,
+                            pointRadius: 2
+                        });
+                        addFileEntryUI(fileName, color);
+                    }
+                } catch (error) {
+                    console.error(`處理檔案 ${file.name} 時發生錯誤:`, error);
                 }
-            } catch (error) {
-                console.error('載入檔案時發生錯誤:', error);
-                alert(`載入檔案時發生錯誤: ${error.message}`);
             }
+
+            if (datasetMap.size > 0) {
+                drawChart();
+                document.getElementById('resetColorsBtn').style.display = 'inline-block';
+                calculateMetrics();
+            } else {
+                alert('沒有成功載入任何有效的 CSV 或 Excel 檔案');
+            }
+            updateFileCount(); // Add this line to update the file count
         }
+
+        function updateFileCount() {
+            const fileCountSpan = document.getElementById('fileCount');
+            fileCountSpan.textContent = `已上傳 ${datasetMap.size} 個檔案`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('csvFileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            fileInput.addEventListener('change', handleFileUpload);
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click(); // Trigger file input click when button is clicked
+            });
+            updateFileCount(); // Initialize file count
+        });
 
         const minRiskInput = document.getElementById('minRisk');
         const maxRiskInput = document.getElementById('maxRisk');
@@ -1443,14 +959,13 @@
             maxRisk: undefined,
             minProfit: undefined,
             maxProfit: undefined,
-            pointRadiusInput: 2 // Default point radius
+            pointRadiusInput: 2
         };
         [minRiskInput, maxRiskInput, minProfitInput, maxProfitInput].forEach(input => {
             input.addEventListener('blur', () => {
                 if (datasetMap.size > 0) {
                     drawChart();
                     calculateMetrics();
-                    // If table is visible, regenerate it
                     if (document.getElementById('metricsTableContainer').style.display === 'block') {
                         generateMetricsTable();
                     }
@@ -1460,7 +975,6 @@
                 if (e.key === 'Enter' && datasetMap.size > 0) {
                     drawChart();
                     calculateMetrics();
-                    // If table is visible, regenerate it
                     if (document.getElementById('metricsTableContainer').style.display === 'block') {
                         generateMetricsTable();
                     }
@@ -1470,6 +984,7 @@
 
         function resetField(fieldId) {
             document.getElementById(fieldId).value = defaultRanges[fieldId] ?? '';
+            //alert(`${document.getElementById(fieldId).value}`);
             if (datasetMap.size > 0) {
                 drawChart();
                 calculateMetrics();
@@ -1495,9 +1010,9 @@
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || data.name === 'Our method' || data.name === 'MoQIO') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
+                const newColor = defaultColors[index % defaultColors.length] || '#000000';
                 data.color = newColor;
-                data.pointRadius = 2; // Reset point radius to default
+                data.pointRadius = 2;
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
                 if (entryDiv) {
                     const colorPreview = entryDiv.querySelector('.color-preview-box-list');
@@ -1506,7 +1021,7 @@
                     }
                     const radiusInput = entryDiv.querySelector('.point-radius-input');
                     if (radiusInput) {
-                        radiusInput.value = 2; // Update UI input
+                        radiusInput.value = 2;
                     }
                     const modal = entryDiv.querySelector('.color-picker-modal');
                     if (modal) {
@@ -1535,7 +1050,7 @@
                         rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
                         rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
                         opacitySlider.value = a;
-                        opacityNumber.value = Math.round(a * 100); // Convert to percentage
+                        opacityNumber.value = Math.round(a * 100);
                         livePreview.style.backgroundColor = newColor;
                         livePreview.style.opacity = a;
                         nativeColorInput.value = newColor;
@@ -1624,7 +1139,7 @@
                 let sumMin = 0.0;
                 for (let i = 0; i < data.risk.length; i++) {
                     const risk = data.risk[i];
-                    const profit = data.profit[i];
+                    const profit = data.risk[i];
                     let minDis = Infinity;
                     for (let j = 0; j < normalizedFront.risk.length; j++) {
                         const pRisk = normalizedFront.risk[j];
@@ -1736,13 +1251,11 @@
                 return;
             }
 
-            // Get range inputs
             const minRisk = parseFloat(minRiskInput.value);
             const maxRisk = parseFloat(maxRiskInput.value);
             const minProfit = parseFloat(minProfitInput.value);
             const maxProfit = parseFloat(maxProfitInput.value);
 
-            // Filter data based on ranges
             const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
 
             if (filteredMap.size < 2) {
@@ -1789,7 +1302,6 @@
                     const igd_value = IGD[name].toFixed(20);
                     const displayName = filteredMap.get(name)?.simplifiedName || name;
                     output += `${displayName}\nHV:  ${hv} (${hv_value})\nGD:  ${gd} (${gd_value})\nIGD: ${igd} (${igd_value})\n\n`;
-                    //output += `${displayName}\nHV:  ${hv} (${hv_value})\nIGD: ${igd} (${igd_value})\n\n`;
                 }
 
                 const panel = document.getElementById('metricsOutput');
@@ -1817,13 +1329,11 @@
                 return;
             }
 
-            // Get range inputs
             const minRisk = parseFloat(minRiskInput.value);
             const maxRisk = parseFloat(maxRiskInput.value);
             const minProfit = parseFloat(minProfitInput.value);
             const maxProfit = parseFloat(maxProfitInput.value);
 
-            // Filter data based on ranges
             const filteredMap = filterDataByRange(datasetMap, minRisk, maxRisk, minProfit, maxProfit);
 
             if (filteredMap.size < 2) {
@@ -1870,7 +1380,7 @@
                     filteredMap.get(name)?.data.length || 0;
                 const data = {
                     fileName: name,
-                    customName: name === "Combined Front" ? "Combined" : filteredMap.get(name)?.name || name.replace('MOEAD', 'MOEA/D'),
+                    customName: name === "Combined Front" ? "Combined" : filteredMap.get(name)?.name || name,
                     points: pointCount,
                     hv: HV[name],
                     gd: GD[name],
@@ -1885,17 +1395,9 @@
                 }
             }
 
-            // Sort metricsData to place MoQTS, MoQA, with ELS, Our method, MoQIO at the bottom
-            const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO'];
-            metricsData.sort((a, b) => {
-                const aIsPriority = priorityFolders.includes(a.customName);
-                const bIsPriority = priorityFolders.includes(b.customName);
-                if (aIsPriority && !bIsPriority) return 1; // a is priority, move to bottom
-                if (!aIsPriority && bIsPriority) return -1; // b is priority, move to bottom
-                return 0; // Maintain relative order for non-priority or both priority
-            });
+            metricsData.sort((a, b) => a.customName.localeCompare(b.customName));
 
-            const maxNDS = metricsData.length > 0 ? 0 : 0;
+            const maxNDS = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.points)) : 0;
             const maxHV = metricsData.length > 0 ? Math.max(...metricsData.map(d => d.hv)) : 0;
             const minGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.gd)) : Infinity;
             const minIGD = metricsData.length > 0 ? Math.min(...metricsData.map(d => d.igd)) : Infinity;
@@ -1906,19 +1408,19 @@
                 const hitCount = hitCounts[data.fileName] || { hits: 0, total: 0 };
                 const row = document.createElement('tr');
                 row.innerHTML = `
-            <td>${data.customName}</td>
-            <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
-            <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
-            <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
-            <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
-                ${data.hitRate.toFixed(2)}%
-                <span style="font-size: 0.7em; vertical-align: middle; font-family: 'Times New Roman', Times, serif;">
-                    \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
-                </span>
-            </td>
-            <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
-            <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
-        `;
+                    <td>${data.customName}</td>
+                    <td class="${data.points === maxNDS ? 'best' : ''}">${data.points}</td>
+                    <td class="${data.hv === maxHV ? 'best' : ''}">${data.hv.toFixed(4)}</td>
+                    <td class="${data.hvRate === maxHVRate ? 'best' : ''}">${data.hvRate.toFixed(2)}%</td>
+                    <td class="${data.hitRate === maxHitRate ? 'best' : ''}">
+                        ${data.hitRate.toFixed(2)}%
+                        <span style="font-size: 0.7em; vertical-align: middle; font-family: 'Times New Roman', Times, serif;">
+                            \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+                        </span>
+                    </td>
+                    <td class="${data.gd === minGD ? 'best' : ''}">${formatScientific(data.gd, 2)}</td>
+                    <td class="${data.igd === minIGD ? 'best' : ''}">${formatScientific(data.igd, 2)}</td>
+                `;
                 tableBody.appendChild(row);
             });
 
@@ -1927,19 +1429,19 @@
                 const row = document.createElement('tr');
                 row.className = 'combined-front';
                 row.innerHTML = `
-            <td>${combinedFrontMetrics.customName}</td>
-            <td>${combinedFrontMetrics.points}</td>
-            <td>${combinedFrontMetrics.hv.toFixed(4)}</td>
-            <td>${combinedFrontMetrics.hvRate.toFixed(2)}%</td>
-            <td>
-                ${combinedFrontMetrics.hitRate.toFixed(2)}%
-                <span style="font-size: 0.7em; vertical-align: middle;">
-                    \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
-                </span>
-            </td>
-            <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
-            <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
-        `;
+                    <td>${combinedFrontMetrics.customName}</td>
+                    <td>${combinedFrontMetrics.points}</td>
+                    <td>${combinedFrontMetrics.hv.toFixed(4)}</td>
+                    <td>${combinedFrontMetrics.hvRate.toFixed(2)}%</td>
+                    <td>
+                        ${combinedFrontMetrics.hitRate.toFixed(2)}%
+                        <span style="font-size: 0.7em; vertical-align: middle;">
+                            \\( \\frac{${hitCount.hits}}{${hitCount.total}} \\)
+                        </span>
+                    </td>
+                    <td>${formatScientific(combinedFrontMetrics.gd, 2)}</td>
+                    <td>${formatScientific(combinedFrontMetrics.igd, 2)}</td>
+                `;
                 tableBody.appendChild(row);
             }
 
@@ -1980,55 +1482,55 @@
             modal.className = 'color-picker-modal';
             modal.style.display = 'none';
             modal.innerHTML = `
-        <div class="color-picker-tabs">
-            <button data-tab="common" class="active">常用顏色</button>
-            <button data-tab="hexrgb">HEX & RGB</button>
-            <button data-tab="native">原生選擇器</button>
-        </div>
-        <div class="color-picker-content active" id="${modalId}-common">
-            <div class="common-colors">
-                ${[
+                <div class="color-picker-tabs">
+                    <button data-tab="common" class="active">常用顏色</button>
+                    <button data-tab="hexrgb">HEX & RGB</button>
+                    <button data-tab="native">原生選擇器</button>
+                </div>
+                <div class="color-picker-content active" id="${modalId}-common">
+                    <div class="common-colors">
+                        ${[
                     ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
                     ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
                     ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
                     ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
                     ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
                 ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
-            </div>
-        </div>
-        <div class="color-picker-content" id="${modalId}-hexrgb">
-            <div class="hexrgb-inputs">
-                <label><span>紅 :</span>
-                    <div class="rgb-preview-box" style="background-color: rgb(${parseInt(defaultColor.slice(1, 3), 16)}, 0, 0);"></div>
-                    <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
-                    <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
-                </label>
-                <label><span>綠 :</span>
-                    <div class="rgb-preview-box" style="background-color: rgb(0, ${parseInt(defaultColor.slice(3, 5), 16)}, 0);"></div>
-                    <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
-                    <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
-                </label>
-                <label><span>藍 :</span>
-                    <div class="rgb-preview-box" style="background-color: rgb(0, 0, ${parseInt(defaultColor.slice(5, 7), 16)});"></div>
-                    <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
-                    <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
-                </label>
-                <label><span>不透明度 :</span>
-                    <input type="range" min="0" max="1" step="0.01" value="${datasetMap.get(fileName).opacity || 1}" class="opacity-slider">
-                    <input type="number" min="0" max="100" step="1" value="${Math.round((datasetMap.get(fileName).opacity || 1) * 100)}" class="opacity-number">%
-                </label>
-                <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
-                    <span>十六進位表示 :</span>
-                    <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: ${datasetMap.get(fileName).opacity || 1};"></div>
-                    <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}" style="width: 100px;">
-                    <button class="confirm-btn">更新</button>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="color-picker-content" id="${modalId}-native">
-            <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
-        </div>
-    `;
+                <div class="color-picker-content" id="${modalId}-hexrgb">
+                    <div class="hexrgb-inputs">
+                        <label><span>紅 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(${parseInt(defaultColor.slice(1, 3), 16)}, 0, 0);"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>綠 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(0, ${parseInt(defaultColor.slice(3, 5), 16)}, 0);"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>藍 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(0, 0, ${parseInt(defaultColor.slice(5, 7), 16)});"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>不透明度 :</span>
+                            <input type="range" min="0" max="1" step="0.01" value="${datasetMap.get(fileName).opacity || 1}" class="opacity-slider">
+                            <input type="number" min="0" max="100" step="1" value="${Math.round((datasetMap.get(fileName).opacity || 1) * 100)}" class="opacity-number">%
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
+                            <span>十六進位表示 :</span>
+                            <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: ${datasetMap.get(fileName).opacity || 1};"></div>
+                            <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}" style="width: 100px;">
+                            <button class="confirm-btn">更新</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="color-picker-content" id="${modalId}-native">
+                    <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
+                </div>
+            `;
 
             entry.appendChild(modal);
 
@@ -2064,9 +1566,9 @@
             radiusInput.max = '12';
             radiusInput.step = '1';
             radiusInput.value = datasetMap.get(fileName).pointRadius || 2;
-            radiusInput.style.width = '26px'; // Reduced from 60px
-            radiusInput.style.height = '20px'; // Explicitly set height to make it smaller
-            radiusInput.style.fontSize = '14px'; // Smaller font for better fit
+            radiusInput.style.width = '26px';
+            radiusInput.style.height = '20px';
+            radiusInput.style.fontSize = '14px';
             radiusInput.style.marginLeft = '6px';
             radiusInput.title = '點大小';
             radiusInput.addEventListener('blur', () => {
@@ -2163,7 +1665,7 @@
                 const r = parseInt(rgbNumbers[0].value) || 0;
                 const g = parseInt(rgbNumbers[1].value) || 0;
                 const b = parseInt(rgbNumbers[2].value) || 0;
-                const a = parseFloat(opacityNumber.value) / 100 || 0; // Use 0 if invalid
+                const a = parseFloat(opacityNumber.value) / 100 || 0;
                 if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
                     const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
                     livePreview.style.backgroundColor = hex;
@@ -2208,8 +1710,8 @@
                 slider.addEventListener('input', () => {
                     if (channel === 'opacity') {
                         const value = parseFloat(slider.value) || 0;
-                        number.value = Math.round(value * 100); // Convert decimal to percentage
-                        updatePreview(); // Update live preview with opacity
+                        number.value = Math.round(value * 100);
+                        updatePreview();
                     } else {
                         number.value = slider.value;
                         updatePreview();
@@ -2228,9 +1730,9 @@
                         let value = parseFloat(number.value) || 0;
                         if (value < 0) value = 0;
                         if (value > 100) value = 100;
-                        slider.value = value / 100; // Convert percentage to decimal
+                        slider.value = value / 100;
                         number.value = value;
-                        updatePreview(); // Update live preview with opacity
+                        updatePreview();
                     } else {
                         let value = parseInt(number.value) || 0;
                         if (value < 0) value = 0;
@@ -2296,7 +1798,8 @@
             nameInput.type = 'text';
             nameInput.style.width = '80px';
             nameInput.placeholder = '前緣名稱';
-            nameInput.value = datasetMap.get(fileName).name || '';
+            nameInput.value = datasetMap.get(fileName).name;
+
             nameInput.addEventListener('blur', () => {
                 datasetMap.get(fileName).name = nameInput.value.trim();
                 drawChart();
@@ -2313,6 +1816,7 @@
                 datasetMap.delete(fileName);
                 entry.remove();
                 drawChart();
+                updateFileCount(); // Add this line to update the file count
             };
 
             entry.appendChild(colorPreview);
