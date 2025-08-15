@@ -1393,7 +1393,7 @@
                             const fileName = filePath.split('/').pop();
                             const folder = filePath.split('/')[1].replace('%28M2M%29', '(M2M)'); // Use second-level folder
                             const displayFolder = folder === 'MOEAD' ? 'MOEA/D' : folder;
-                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method' || folder === 'MoQIO') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
+                            const color = (folder === 'MoQTS' || folder === 'MoQA' || folder === 'with ELS' || folder === 'Our method' || folder === 'MoQIO' || folder === 'Hybrid') ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             datasetMap.set(fileName, {
                                 name: displayFolder,
@@ -1495,7 +1495,7 @@
         function resetColors() {
             const entries = Array.from(datasetMap.entries());
             entries.forEach(([fileName, data], index) => {
-                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || data.name === 'Our method' || data.name === 'MoQIO') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
+                const newColor = (data.name === 'MoQTS' || data.name === 'MoQA' || data.name === 'with ELS' || data.name === 'Our method' || data.name === 'MoQIO' || data.name === 'Hybrid') ? '#FF0000' : defaultColors[index - 1 % defaultColors.length] || '#000000';
                 data.color = newColor;
                 data.pointRadius = 2; // Reset point radius to default
                 const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
@@ -1886,7 +1886,7 @@
             }
 
             // Sort metricsData to place MoQTS, MoQA, with ELS, Our method, MoQIO at the bottom
-            const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO'];
+            const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid'];
             metricsData.sort((a, b) => {
                 const aIsPriority = priorityFolders.includes(a.customName);
                 const bIsPriority = priorityFolders.includes(b.customName);
