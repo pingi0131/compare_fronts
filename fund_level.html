@@ -919,6 +919,7 @@
             dataSourceSelect.addEventListener('change', () => {
                 // 刷新側邊欄的日期列表
                 populateDateSidebar();
+                hideDetailPanel();
 
                 // 清空圖表和相關 UI 元素
                 datasetMap.clear();
@@ -928,6 +929,7 @@
                 document.getElementById('metricsTableContainer').style.display = 'none';
                 document.getElementById('showTableBtn').style.display = 'none';
                 document.getElementById('resetColorsBtn').style.display = 'none';
+
                 if (chartInstance) {
                     chartInstance.destroy();
                     chartInstance = null;
@@ -1195,6 +1197,7 @@
 
         // Modified loadFilesFromDataDir to accept year and month parameters
         async function loadFilesFromDataDir(year, month) {
+            hideDetailPanel();
             if (!year || !month) {
                 alert('請選擇一個日期');
                 return;
@@ -2042,6 +2045,10 @@
 
         function hideDetailPanel() {
             const panel = document.getElementById('detailPanel');
+            const content = document.getElementById('detailContent');
+            if (content) {
+                content.innerHTML = ''; // 強制清空內容
+            }
             panel.style.display = 'none';
         }
 
