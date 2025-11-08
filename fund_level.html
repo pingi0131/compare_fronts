@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Frontier detail Information</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.2/dist/chartjs-plugin-dragdata.min.js"></script>
+    <script>
+        // 偵測是否為舊瀏覽器（缺少 ES6 關鍵功能）
+        if (!window.Promise || !Array.prototype.find) {
+            var s = document.createElement('script');
+            s.src = 'https://polyfill.io/v3/polyfill.min.js?features=es6';
+            s.defer = true;
+            document.head.appendChild(s);
+        }
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            chtml: { scale: 1.5 }
+        };
+    </script>
+    <style>
+        body {
+            font-family: '標楷體', 'Times New Roman', serif;
+            padding: 28px;
+            display: flex;
+        }
+
+        .date-inputs {
+            position: fixed;
+            top: 45px;
+            right: 0px;
+            /* 與側邊欄觸發器對齊 */
+            display: flex;
+            align-items: center;
+            /*gap: 10px;*/
+            background-color: #f0f0f0;
+            /*padding: 6px;
+            border: 1px solid #ccc;
+            /*border-radius: 4px;*/
+            z-index: 1002;
+            /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
+            border-radius: 4px;
+            /* 可選：保持圓角 */
+        }
+
+        .date-inputs input[type="number"] {
+            width: 60px;
+            padding: 3px;
+            font-size: 16px;
+            font-family: 'Times New Roman';
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            height: 24px;
+        }
+
+        .date-inputs button {
+            background-color: #f0f0f0;
+            color: #ffffff;
+            border: none;
+            padding: 1px 1px;
+            /* 減少按鈕內邊距 */
+            cursor: pointer;
+            font-size: 16px;
+            font-family: '標楷體', 'Times New Roman', serif;
+            width: 30px;
+            height: 24px;
+            display: flex;
+            /* 使用 flex 佈局 */
+            justify-content: center;
+            /* 水平居中 */
+            align-items: center;
+            /* 垂直居中 */
+            border-radius: 4px;
+            /* 保持圓角 */
+        }
+
+        .date-inputs button:hover {
+            background-color: #ccc;
+        }
+
+        .date-inputs button:hover::after {
+            background-color: #ffffff;
+            content: "Load";
+            position: absolute;
+            top: 100%;
+            right: 0%;
+            font-size: 20px;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+        }
+
+        .data-source-container {
+            font-family: 'Times New Roman', Times, serif;
+            position: fixed;
+            top: 10px;
+            right: 0px;
+            display: flex;
+            align-items: center;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            z-index: 1003;
+        }
+
+        .data-source-container select {
+            padding: 3px;
+            font-size: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            height: 35px;
+            width: 170px;
+            background-color: #fff;
+            cursor: pointer;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .data-source-container select:focus {
+            outline: none;
+            border-color: #007BFF;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            top: 80px;
+            width: 110px;
+            height: calc(100vh - 122px);
+            /* Adjust height to fit */
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            border-top: 1px solid #ccc;
+            /* 添加上邊框 */
+            border-bottom: 1px solid #ccc;
+            /* 添加下邊框 */
+            border-left: 1px solid #ccc;
+            padding: 10px;
+            position: fixed;
+            right: -110px;
+            /* Hidden by default */
+            transition: right 0.3s ease;
+            /* Smooth sliding */
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .sidebar.visible {
+            right: 0;
+            /* Visible when hovered */
+        }
+
+        .sidebar-trigger {
+            position: fixed;
+            right: 0;
+            top: 28px;
+            width: 20px;
+            /* Trigger area */
+            height: calc(100vh - 56px);
+            background: transparent;
+            z-index: 1001;
+            cursor: pointer;
+        }
+
+        .date-entry {
+            padding: 9px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 20px;
+            /* 默認字體大小 */
+            text-align: center;
+        }
+
+        .date-entry:hover {
+            background-color: #e0e0e0;
+            font-size: 21px;
+            /* 懸停時略微放大 */
+        }
+
+        .date-entry:active {
+            transform: scale(0.9);
+        }
+
+        .date-entry.selected {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+
+
+        /* Customize link styles */
+        .menu-link {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 30px;
+            color: #9bc5f2;
+            text-decoration: none;
+            margin-left: 10px;
+            /* Consistent spacing */
+            vertical-align: middle;
+            position: relative;
+            /* Anchor for absolute tooltip */
+            display: inline-block;
+            /* Prevent layout shift */
+        }
+
+        .menu-link:active {
+            font-size: 80%;
+        }
+
+        .menu-link:hover {
+            color: #0056b3;
+        }
+
+        .menu-link:hover::after {
+            content: "上傳自己的前緣";
+            font-family: '標楷體', 'Times New Roman', serif;
+            font-size: 26px;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            text-decoration: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            /* align middle with link */
+            bottom: 100%;
+            /* Position above the link */
+            z-index: 1005;
+            /* Above other elements */
+        }
+
+        /* Main content */
+        .main-content {
+            margin-right: 20px;
+            /* Space for trigger */
+            width: calc(100% - 20px);
+        }
+
+        #chart-container {
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 16 / 10;
+            margin: 20px auto 0;
+            display: none;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        h1 {
+            margin-top: 0px;
+            margin-bottom: 20px;
+        }
+
+        .controls,
+        .range-controls {
+            font-size: 20px;
+            margin: 12px 0;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .controls input[type="file"] {
+            font-size: 18px;
+        }
+
+        .range-controls label,
+        .range-controls input[type="number"],
+        .range-controls button {
+            font-size: 18px;
+            font-family: "標楷體", "Times New Roman", serif;
+            font-weight: bold;
+        }
+
+        .reset-range-btn {
+            background-image: url('./png/reset.png');
+            background-size: 130%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 30px;
+            height: 30px;
+            border: none;
+            outline: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+            background-color: transparent;
+            vertical-align: middle;
+        }
+
+        .reset-range-btn:hover::after {
+            content: "reset";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: black;
+            padding: 5px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+        }
+
+        .reset-range-btn:active {
+            transform: scale(0.9);
+        }
+
+        .tilde {
+            font-size: 1.5em;
+            vertical-align: middle;
+        }
+
+        .file-entry {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 6px 0;
+        }
+
+        .math-label {
+            font-size: 28px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 2px 4px;
+            /*font-family: 'Times New Roman', Times, serif;
+            font-size: 0.7em;*/
+        }
+
+        input[type="number"] {
+            font-family: 'Times New Roman', Times, serif;
+            width: 80px;
+            padding: 2px 4px;
+            font-size: 0.9em;
+            height: 30px;
+            vertical-align: middle;
+        }
+
+        button {
+            background-color: #c00;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #900;
+        }
+
+        .reset-btn {
+            margin-left: 4px;
+            background-color: #007BFF;
+        }
+
+        .reset-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .show-table-btn {
+            display: none;
+            font-size: 16px;
+            font-family: '標楷體', 'Times New Roman', serif;
+            background-color: #007BFF;
+        }
+
+        .show-table-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .metrics-results {
+            margin-top: 20px;
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 6px;
+            white-space: pre;
+        }
+
+        #metricsTable {
+            /* 精緻表格預設字體大小 */
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 24px;
+            font-weight: 500;
+            text-align: center;
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        #metricsTable td:nth-child(5) {
+            font-size: 19px;
+            /* Hit Rate 欄位專用字體大小 */
+        }
+
+        #metricsTable td:nth-child(1) {
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        #metricsTable th,
+        #metricsTable td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #metricsTable th {
+            background-color: #f0f0f0;
+            font-weight: 800;
+        }
+
+        #metricsTable th,
+        #metricsTable td {
+            width: calc(120% / 7);
+        }
+
+        #metricsTable td.best {
+            color: red;
+            font-weight: bold;
+        }
+
+        #metricsTable tr.combined-front {
+            background-color: #e0f0ff;
+            font-weight: bold;
+        }
+
+        #metricsTable tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #metricsTable tbody tr:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Custom Color Picker Modal Styles */
+        .color-picker-modal {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .point-radius-input {
+            margin-left: 6px;
+            padding: 2px 4px;
+            vertical-align: middle;
+        }
+
+        .color-picker-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 115px);
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        .color-picker-tabs button {
+            padding: 5px;
+            background: #f0f0f0;
+            /* 恢復默認背景色 */
+            color: #333333;
+            /* 恢復默認文字顏色 */
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 3px 3px 0 0;
+            text-align: center;
+            transition: background-color 0.2s ease;
+            /* 保持平滑過渡 */
+        }
+
+        .color-picker-content input[type="color"] {
+            width: 115px;
+            height: 40px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            background: transparent;
+            padding: 0;
+        }
+
+        .color-picker-tabs button.active {
+            background: #007BFF;
+            color: white;
+            border-bottom: 2px solid #0056b3;
+        }
+
+        .color-picker-tabs button:hover {
+            background: #d0d0d0;
+            color: #000000;
+        }
+
+        .color-picker-content {
+            display: none;
+        }
+
+        .color-picker-content.active {
+            display: block;
+        }
+
+        .common-colors {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-auto-rows: 30px;
+            gap: 5px;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .color-swatch:hover {
+            border-color: #000;
+        }
+
+        .hexrgb-inputs {
+            display: grid;
+            gap: 8px;
+        }
+
+        .hexrgb-inputs label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* Keep horizontal gap as is or adjust as needed */
+            font-size: 14px;
+            margin-bottom: 4px;
+            /* Reduced from 8px to 4px for less vertical spacing */
+            width: 100%;
+        }
+
+        .hexrgb-inputs input.rgb-slider {
+            width: 115px;
+        }
+
+        .hexrgb-inputs input.rgb-slider,
+        .hexrgb-inputs input.opacity-slider {
+            width: 100%;
+        }
+
+        .hexrgb-inputs input.rgb-number,
+        .hexrgb-inputs input.opacity-number {
+            width: 50px;
+            padding: 3px;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .hexrgb-inputs input.hex-input {
+            width: 100%;
+            padding: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .hexrgb-inputs .confirm-btn {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+            justify-self: center;
+        }
+
+        .hexrgb-inputs .confirm-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .rgb-inputs input {
+            width: 60px;
+            padding: 3px;
+            font-size: 14px;
+        }
+
+        .rgb-preview-box {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            vertical-align: middle;
+            border-radius: 4px;
+            flex-shrink: 0;
+            /* Prevent preview box from shrinking */
+        }
+
+        .rgb-slider {
+            flex: 1;
+            /* Take remaining space */
+            min-width: 50px;
+            /* Ensure slider is usable */
+            vertical-align: middle;
+        }
+
+        .rgb-number {
+            width: 50px;
+            padding: 3px;
+            font-size: 20px;
+            vertical-align: middle;
+            flex-shrink: 0;
+            /* Prevent number input from shrinking */
+            text-align: right;
+            /* 文字靠右對齊 */
+        }
+
+        .color-preview-box {
+            opacity: 1;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .color-preview-box-list {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            vertical-align: middle;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .color-preview-box-list:hover {
+            border-color: #000;
+        }
+
+        .hexrgb-inputs label span {
+            font-size: 24px;
+            /* 保持字體大小 */
+            display: inline-block;
+            /* 讓它可以有寬度屬性 */
+            width: auto;
+            /* 自動寬度根據內容 */
+            white-space: nowrap;
+            /* 防止換行 */
+            font-family: "標楷體", "Times New Roman", serif;
+        }
+
+        #detailPanel .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            background: #fff;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+        #detailPanel .close-btn:hover {
+            background: #f0f0f0;
+            color: #c00;
+            border-color: #c00;
+        }
+        #detailPanel .close-btn:active {
+            transform: scale(0.9);
+        }
+
+        #detailPanel h3 {
+            text-align: center;              /* 文字水平置中 */
+            font-family: "標楷體", "Times New Roman", serif; /* 指定字體，優先使用標楷體 */
+            font-size: 30px;                 /* 放大字體，可依需要調整 */
+            font-weight: bold;               /* 加粗 */
+        }
+
+        .fund-toggle-btn:hover {
+            opacity: 0.8;
+        }
+
+        .fund-toggle-btn.active {
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="data-source-container">
+        <select id="dataSourceSelect">
+            <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                WPM Hybrid</option>
+            <option value="WPM_MoQTS" data-min-year="2021" data-min-month="12" data-max-year="2024" data-max-month="11">
+                WPM MoQTS</option>
+            <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
+                WPM MoQA</option>
+            <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
+                EPM H-MoQTS</option>
+        </select>
+    </div>
+
+    <div class="date-inputs">
+        <input type="number" id="yearInput" placeholder="Year" min="2023" max="2025" step="1">
+        <input type="number" id="monthInput" placeholder="Month" min="1" max="12" step="1">
+        <button id="loadDateBtn" class="reset-btn">✔️</button>
+    </div>
+    <div class="sidebar-trigger" id="sidebarTrigger"></div>
+    <div class="sidebar" id="dateSidebar">
+        <!-- Date entries will be populated by JavaScript -->
+    </div>
+    <div class="main-content">
+        <h1>前緣詳細資料 投資組合 資金水位
+        </h1>
+
+        <div class="range-controls">
+            <label class="math-label">\( f_1(x) \)</label>
+            <input type="number" id="minRisk" placeholder="Min" step="1">
+            <button class="reset-range-btn" onclick="resetField('minRisk')"></button>
+            <span class="tilde">-</span>
+            <input type="number" id="maxRisk" placeholder="Max" step="1">
+            <button class="reset-range-btn" onclick="resetField('maxRisk')"></button>
+              
+            <label>\( f_2(x) \)</label>
+            <input type="number" id="minProfit" placeholder="Min" step="1">
+            <button class="reset-range-btn" onclick="resetField('minProfit')"></button>
+            <span class="tilde">-</span>
+            <input type="number" id="maxProfit" placeholder="Max" step="1">
+            <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
+              
+            <button class="reset-btn" onclick="resetAllRanges()">All</button>
+        </div>
+        <div id="fileListContainer" class="controls"></div>
+        <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
+        <div id="chart-container">
+            <canvas id="riskProfitChart"></canvas>
+        </div>
+        <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
+        <div id="detailPanel" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none; font-family: Arial; position: relative;">
+            <button class="close-btn" onclick="hideDetailPanel()" title="關閉">×</button>
+            <h3>Portfolio Details</h3>
+            <div id="detailContent"></div>
+        </div>
+        <!-- 新增：股價顯示區塊 -->
+        <div id="stockPriceContainer">
+            <h3></h3>
+            <div id="stockPriceError"></div>
+            </table>
+        </div>
+       
+    </div>
+    <script>
+        let chartInstance = null;
+        const datasetMap = new Map();
+        const defaultColors = ['#0000FF', '#FFA500', '#888888', '#00AA00'];
+        let combinedFront = null;
+        let initialRanges = {
+            minRisk: undefined,
+            maxRisk: undefined,
+            minProfit: undefined,
+            maxProfit: undefined
+        };
+        const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid'];     // 設定優先排序的名稱，包括matrix和前緣顏色
+
+        const MARKET_GROUPS = {
+            DJIA:          ['WPM_MoQTS', 'WPM_Hybrid', 'WPM_MoQA'],
+            NIKKEI:        [],
+            NIKKEI_DJIA:   ['EPM_H-MoQTS'],
+            DJIA_NIKKEI:   []
+        };
+
+        const MARKET_MAP = Object.entries(MARKET_GROUPS).reduce((map, [market, algos]) => {
+            algos.forEach(algo => {
+                map[algo] = market;
+            });
+            return map;
+        }, {});
+        
+        function formatNum(num, fixed_length = 2) {
+            const str = num.toFixed(fixed_length);
+            const [integerPart, decimalPart] = str.split('.');
+
+            // 整數部分：每三位加逗號
+            const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+            // 小數部分：原樣保留，不加逗號
+            return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+        }
+
+        function filterDataByRange(dataMap, minRisk, maxRisk, minProfit, maxProfit) {
+            const filteredMap = new Map();
+            dataMap.forEach((value, fileName) => {
+                const filteredData = value.data.filter(point => {
+                    const x = point.x;
+                    const y = point.y;
+                    return (
+                        (isNaN(minRisk) || x >= minRisk) &&
+                        (isNaN(maxRisk) || x <= maxRisk) &&
+                        (isNaN(minProfit) || y >= minProfit) &&
+                        (isNaN(maxProfit) || y <= maxProfit)
+                    );
+                });
+                if (filteredData.length > 0) {
+                    filteredMap.set(fileName, {
+                        ...value,
+                        data: filteredData
+                    });
+                }
+            });
+            return filteredMap;
+        }
+
+        // Generate date list
+        function generateDateList() {
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+            const minYear = parseInt(selectedOption.dataset.minYear);
+            const maxYear = parseInt(selectedOption.dataset.maxYear);
+            const minMonth = parseInt(selectedOption.dataset.minMonth);
+            const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
+            const dates = [];
+
+            for (let year = maxYear; year >= minYear; year--) {
+
+                // Apply specific min/max only for minYear and maxYear
+                let maxMonthForYear = year === maxYear ? maxMonth : 12;
+                let minMonthForYear = year === minYear ? minMonth : 1;
+
+                for (let month = maxMonthForYear; month >= minMonthForYear; month--) {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    dates.push(`${year}_${paddedMonth}`);
+                }
+            }
+
+            return dates;
+        }
+
+        // Populate sidebar with date entries
+        function populateDateSidebar() {
+            const sidebar = document.getElementById('dateSidebar');
+            const dates = generateDateList();
+            sidebar.innerHTML = ''; // Clear existing entries
+            dates.forEach(date => {
+                const [year, month] = date.split('_');
+                const entry = document.createElement('div');
+                entry.className = 'date-entry';
+                entry.textContent = date;
+                entry.dataset.year = year;
+                entry.dataset.month = month;
+                entry.addEventListener('click', () => {
+                    // Remove 'selected' class from all entries
+                    sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
+                    // Add 'selected' class to clicked entry
+                    entry.classList.add('selected');
+                    // Update date input fields
+                    const yearInput = document.getElementById('yearInput');
+                    const monthInput = document.getElementById('monthInput');
+                    yearInput.value = year;
+                    monthInput.value = parseInt(month, 10); // Remove leading zero for display
+                    // Load files for the selected date
+                    loadFilesFromDataDir(year, month);
+                });
+                sidebar.appendChild(entry);
+            });
+        }
+
+        function initializeSidebarHover() {
+            const sidebar = document.getElementById('dateSidebar');
+            const trigger = document.getElementById('sidebarTrigger');
+
+            trigger.addEventListener('mouseenter', () => {
+                sidebar.classList.add('visible');
+            });
+
+            sidebar.addEventListener('mouseenter', () => {
+                sidebar.classList.add('visible');
+            });
+
+            sidebar.addEventListener('mouseleave', (e) => {
+                if (!e.relatedTarget || (e.relatedTarget !== trigger && !trigger.contains(e.relatedTarget))) {
+                    sidebar.classList.remove('visible');
+                }
+            });
+
+            trigger.addEventListener('mouseleave', (e) => {
+                if (!e.relatedTarget || (e.relatedTarget !== sidebar && !sidebar.contains(e.relatedTarget))) {
+                    sidebar.classList.remove('visible');
+                }
+            });
+        }
+
+        function initializeDataSourceSelect() {
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            dataSourceSelect.addEventListener('change', () => {
+                // 刷新側邊欄的日期列表
+                populateDateSidebar();
+
+                // 清空圖表和相關 UI 元素
+                datasetMap.clear();
+                document.getElementById('fileListContainer').innerHTML = '';
+                document.getElementById('chart-container').style.display = 'none';
+                document.getElementById('metricsOutput').style.display = 'none';
+                document.getElementById('metricsTableContainer').style.display = 'none';
+                document.getElementById('showTableBtn').style.display = 'none';
+                document.getElementById('resetColorsBtn').style.display = 'none';
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+
+                // 更新輸入框的限制條件
+                const yearInput = document.getElementById('yearInput');
+                const monthInput = document.getElementById('monthInput');
+                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                const minYear = parseInt(selectedOption.dataset.minYear);
+                const maxYear = parseInt(selectedOption.dataset.maxYear);
+                const minMonth = parseInt(selectedOption.dataset.minMonth);
+                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
+                // 重置輸入框為空或預設值
+                yearInput.value = '';
+                monthInput.value = '';
+
+                // 更新年份和月份的限制
+                yearInput.min = minYear;
+                yearInput.max = maxYear;
+                monthInput.min = minMonth;
+                monthInput.max = maxMonth;
+
+                // 清空側邊欄的選中狀態
+                const sidebar = document.getElementById('dateSidebar');
+                sidebar.querySelectorAll('.date-entry').forEach(entry => {
+                    entry.classList.remove('selected');
+                });
+                hideDetailPanel();  // 清空投資組合詳細資料
+            });
+        }
+
+        // Initialize menu toggle
+        function initializeMenuToggle() {
+            const menuToggle = document.getElementById('menuToggle');
+            const menuContent = document.getElementById('menuContent');
+
+            menuToggle.addEventListener('click', () => {
+                menuContent.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!menuContent.contains(e.target) && e.target !== menuToggle) {
+                    menuContent.classList.remove('active');
+                }
+            });
+        }
+
+        // Call populateDateSidebar when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDateSidebar();
+            initializeSidebarHover();
+            initializeDateInputs();
+            initializeDataSourceSelect();
+            initializeMenuToggle(); // Ensure menu toggle is initialized
+        });
+
+        // 初始化輸入框事件監聽器
+        function initializeDateInputs() {
+            const yearInput = document.getElementById('yearInput');
+            const monthInput = document.getElementById('monthInput');
+            const loadDateBtn = document.getElementById('loadDateBtn');
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+
+            function updateInputConstraints() {
+                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                const minYear = parseInt(selectedOption.dataset.minYear);
+                const maxYear = parseInt(selectedOption.dataset.maxYear);
+                const minMonth = parseInt(selectedOption.dataset.minMonth);
+                const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+
+                // Set year input constraints
+                yearInput.min = minYear;
+                yearInput.max = maxYear;
+                yearInput.placeholder = `Year`;
+
+                // Set month input constraints based on year
+                const year = parseInt(yearInput.value) || maxYear;
+                let minMonthForYear = year === minYear ? minMonth : 1;
+                let maxMonthForYear = year === maxYear ? maxMonth : 12;
+
+                monthInput.min = minMonthForYear;
+                monthInput.max = maxMonthForYear;
+
+                // Adjust month input if out of range
+                const currentMonth = parseInt(monthInput.value);
+                if (currentMonth < minMonthForYear) {
+                    monthInput.value = minMonthForYear;
+                }
+                else if (currentMonth > maxMonthForYear) {
+                    monthInput.value = maxMonthForYear;
+                }
+            }
+
+            // Initialize constraints on page load
+            updateInputConstraints();
+
+            // Update constraints when dataset or year changes
+            dataSourceSelect.addEventListener('change', updateInputConstraints);
+            yearInput.addEventListener('input', updateInputConstraints);
+
+            // 點擊「載入」按鈕時觸發
+            loadDateBtn.addEventListener('click', () => {
+                let year = yearInput.value.trim();
+                let month = monthInput.value.trim().padStart(2, '0');
+
+                // 如果沒有輸入，預設為最大年份和最大月份
+                if (!year && (!month || month === '00')) {
+                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                    year = selectedOption.dataset.maxYear;
+                    const maxMonth = selectedOption.dataset.maxMonth;
+                    month = maxMonth.padStart(2, '0');
+                    yearInput.value = year;
+                    monthInput.value = parseInt(maxMonth);
+                }
+
+                if (validateDate(year, month)) {
+                    loadFilesFromDataDir(year, month);
+                    updateSidebarSelection(year, month);
+                } else {
+                    const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                    const minYear = selectedOption.dataset.minYear;
+                    const maxYear = selectedOption.dataset.maxYear;
+                    const minMonth = selectedOption.dataset.minMonth;
+                    const maxMonth = selectedOption.dataset.maxMonth;
+                    alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
+                }
+            });
+
+            // 按下 Enter 鍵時觸發
+            [yearInput, monthInput].forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        let year = yearInput.value.trim();
+                        let month = monthInput.value.trim().padStart(2, '0');
+
+                        // 如果沒有輸入，預設為最大年份和最大月份
+                        if (!year && (!month || month === '00')) {
+                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                            year = selectedOption.dataset.maxYear;
+                            const maxMonth = selectedOption.dataset.maxMonth;
+                            month = maxMonth.padStart(2, '0');
+                            yearInput.value = year;
+                            monthInput.value = parseInt(maxMonth);
+                        }
+
+                        if (validateDate(year, month)) {
+                            loadFilesFromDataDir(year, month);
+                            updateSidebarSelection(year, month);
+                        } else {
+                            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                            const minYear = selectedOption.dataset.minYear;
+                            const maxYear = selectedOption.dataset.maxYear;
+                            const minMonth = selectedOption.dataset.minMonth;
+                            const maxMonth = selectedOption.dataset.maxMonth;
+                            alert(`區間範圍 ${minYear}/${minMonth.padStart(2, '0')} ~ ${maxYear}/${maxMonth.padStart(2, '0')}`);
+                        }
+                    }
+                });
+            });
+        }
+
+        // 驗證年份和月份
+        function validateDate(year, month) {
+            const y = parseInt(year);
+            const m = parseInt(month);
+            if (isNaN(y) || isNaN(m)) return false;
+
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+            const minYear = parseInt(selectedOption.dataset.minYear);
+            const maxYear = parseInt(selectedOption.dataset.maxYear);
+            const minMonth = parseInt(selectedOption.dataset.minMonth);
+
+            if (y < minYear || y > maxYear) return false;
+            if (m < 1 || m > 12) return false;
+
+            // Check minimum month for the starting year
+            if (y === minYear && m < minMonth) return false;
+
+            // Check maximum month for the year
+            const maxMonthAttr = selectedOption.dataset[`maxMonth${y}`];
+            const maxMonth = maxMonthAttr ? parseInt(maxMonthAttr) : 12;
+            if (m > maxMonth) return false;
+
+            return true;
+        }
+
+        // 更新側邊欄選中狀態
+        function updateSidebarSelection(year, month) {
+            const sidebar = document.getElementById('dateSidebar');
+            sidebar.querySelectorAll('.date-entry').forEach(entry => {
+                entry.classList.remove('selected');
+                if (entry.dataset.year === year && entry.dataset.month === month) {
+                    entry.classList.add('selected');
+                }
+            });
+        }
+
+        function parsePortfolioString(str, count) {
+            if (!str) return [];
+
+            const result = [];
+            const trimmed = str.trim();
+
+            // 支援 {xx%} 或 (xx%)
+            const bracketRegex = /(\w+(?:\.\w+)?)[\(\{](\d+(?:\.\d+)?)%[\)\}]/g;
+            let match;
+
+            // 先嘗試解析所有有括號的比例格式
+            const bracketMatches = [];
+            while ((match = bracketRegex.exec(trimmed)) !== null) {
+                bracketMatches.push({
+                    name: match[1].trim(),
+                    rawPercent: match[2]  // 原始數字字串
+                });
+            }
+
+            // 若有任何括號格式 → 依「整數 / 小數」處理
+            if (bracketMatches.length > 0) {
+                bracketMatches.forEach(item => {
+                    const raw = item.rawPercent;
+                    const num = parseFloat(raw);
+                    if (isNaN(num)) return;
+
+                    let display;
+                    if (raw.includes('.')) {    // 小數比例 → 四捨五入 2 位
+                        display = num.toFixed(2).replace(/\.?0+$/, '') + '%';
+                    } else {                    // 整數比例 → 原樣顯示
+                        display = raw + '%';
+                    }
+
+                    result.push({
+                        name: item.name,
+                        percent: num,
+                        display: display
+                    });
+                });
+                return result;
+            }
+
+            // 無任何括號比例 → 平均分配（保留 2 位小數）
+            const stocks = trimmed
+                .split(/\s+/)
+                .map(s => s.replace(/,/g, '').trim())
+                .filter(s => s.length > 0);
+
+            if (stocks.length === 0) return [];
+
+            const avg = 100.0 / stocks.length;
+            const avgDisplay = avg.toFixed(2).replace(/\.?0+$/, '') + '%';
+
+            stocks.forEach(stock => {
+                result.push({
+                    name: stock,
+                    percent: avg,
+                    display: avgDisplay
+                });
+            });
+
+            return result;
+        }
+
+        // Modified loadFilesFromDataDir to accept year and month parameters
+        async function loadFilesFromDataDir(year, month) {
+            if (!year || !month) {
+                alert('請選擇一個日期');
+                return;
+            }
+            const dataSource = document.getElementById('dataSourceSelect').value;
+            const paddedMonth = month.padStart(2, '0');
+            const pattern = `${year}_${paddedMonth}`;
+            let csvFiles = [];
+
+            // 依資料來源決定要載入的檔案
+            if (dataSource === 'WPM_MoQTS') {
+                csvFiles = [
+                    `MoQTS/MoQTS/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`
+                ];
+            } else if (dataSource === 'WPM_Hybird') {
+                csvFiles = [
+                    `WPM-Hybrid/Hybrid/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
+                ];
+            } else if (dataSource === 'WPM_MoQA') {
+                csvFiles = [
+                    `WPM-MoQA/MoQA/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
+                ];
+            } else if (dataSource === 'EPM_H-MoQTS') {
+                csvFiles = [
+                    `H-MoQTS/H-MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
+                ];
+            } else {
+                alert('只顯示我們的方法 WPM_MoQTS, WPM_Hybird, WPM_MoQA');
+                return;
+            }
+
+            try {
+                datasetMap.clear();
+                document.getElementById('fileListContainer').innerHTML = '';
+                document.getElementById('stockPriceContainer').style.display = 'none';
+                document.getElementById('stockPriceError').style.display = 'none';
+
+                for (const filePath of csvFiles) {
+                    try {
+                        const fileResponse = await fetch(`https://pingi0131.github.io/compare_fronts/data/${filePath}`);
+                        if (!fileResponse.ok) continue;
+
+                        const text = await fileResponse.text();
+                        const lines = text.split(/\r?\n/);
+                        if (lines.length === 0) continue;
+
+                        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+                        // 必要欄位索引
+                        const riskIndex = headers.findIndex(h => h.includes('risk'));
+                        const profitIndex = headers.findIndex(h => h.includes('profit') || h.includes('return'));
+                        const portfolioIndex = headers.findIndex(h => h.includes('portfolio{%}') || h=== 'portfolio');
+                        const countIndex = headers.findIndex(h => h.includes('# of portfolio'));
+                        //alert(`${portfolioIndex}`);
+
+                        if (riskIndex === -1 || profitIndex === -1) continue;
+
+                        const parsed = [];
+                        const portfolioInfo = [];   // 每點的投資組合資訊
+                        const parsedSet = new Set();
+
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if (!line) continue;
+                            const cols = line.split(',').map(c => c.trim());
+
+                            const x = parseFloat(cols[riskIndex]);
+                            const y = parseFloat(cols[profitIndex]);
+                            const key = `${x},${y}`;
+
+                            if (isNaN(x) || isNaN(y) || x <= 0 || y <= 0 || parsedSet.has(key)) continue;
+
+                            parsedSet.add(key);
+                            parsed.push({ x, y });
+
+                            // 解析投資組合
+                            const count = countIndex !== -1 ? parseInt(cols[countIndex]) || 0 : 0;
+                            const portfolioStr = portfolioIndex !== -1 ? cols[portfolioIndex] : '';
+                            const stocks = parsePortfolioString(portfolioStr, count);
+
+                            portfolioInfo.push({ count, stocks });
+                        }
+
+                        if (parsed.length > 0) {
+                            const fileName = filePath.split('/').pop();
+                            const folder = filePath.split('/')[1];
+                            const displayFolder = folder.includes('MoQTS') ? 'MoQTS' :
+                                                folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
+                            const color = '#FF0000';
+                            const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
+
+                            datasetMap.set(fileName, {
+                                name: displayFolder,
+                                data: parsed.sort((a, b) => a.x - b.x),
+                                portfolioInfo,           // 關鍵：儲存每點的組合資訊
+                                color,
+                                simplifiedName: simplifiedFileName,
+                                pointRadius: 3
+                            });
+
+                            addFileEntryUI(fileName, color);
+                        }
+                    } catch (err) {
+                        console.error(`處理 ${filePath} 失敗`, err);
+                    }
+                }
+
+                if (datasetMap.size > 0) {
+                    drawChart();
+                    document.getElementById('resetColorsBtn').style.display = 'inline-block';
+                    /*loadStockPrice(year, paddedMonth, dataSource).then(() => {
+                        document.getElementById('stockPriceContainer').style.display = 'none';
+                    });*/
+                } else {
+                    alert(`沒有成功載入任何有效 CSV 檔案`);
+                }
+            } catch (error) {
+                console.error('載入失敗:', error);
+                alert(`載入失敗: ${error.message}`);
+            }
+        }
+
+        /*async function loadStockPrice(year, paddedMonth, dataSource) {
+            const currentMarket = MARKET_MAP[dataSource] || 'DJIA'; // 預設 DJIA
+            const url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+            const container = document.getElementById('stockPriceContainer');
+            const table = document.getElementById('stockPriceTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            const errorDiv = document.getElementById('stockPriceError');
+            alert(`${currentMarket}`)
+            alert(`${url}`)
+
+            // 清空舊內容
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            errorDiv.style.display = 'none';
+            container.style.display = 'none';
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+
+                const lines = text.trim().split('\n').map(line => line.trim()).filter(line => line);
+                if (lines.length < 1) throw new Error('CSV 檔案為空');
+
+                // 解析標題列
+                const headers = lines[0].split(',').map(h => h.trim());
+
+                // 建立表頭
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.innerHTML = `<strong>${header}</strong>`;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+
+                // 讀取每一筆資料（從第二列開始）
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    const row = document.createElement('tr');
+
+                    values.forEach((value, index) => {
+                        const td = document.createElement('td');
+                        const num = parseFloat(value);
+
+                        // 若為有效數字，格式化為 3 位小數；否則原樣顯示
+                        if (!isNaN(num) && value !== '') {
+                            td.textContent = num.toFixed(3);
+                        } else {
+                            td.textContent = value || '-';
+                        }
+                        row.appendChild(td);
+                    });
+
+                    tbody.appendChild(row);
+                }
+
+                container.style.display = 'block';
+            } catch (err) {
+                errorDiv.textContent = `無法載入股價資料：${err.message}`;
+                errorDiv.style.display = 'block';
+                container.style.display = 'block';
+            }
+        }*/
+
+        const minRiskInput = document.getElementById('minRisk');
+        const maxRiskInput = document.getElementById('maxRisk');
+        const minProfitInput = document.getElementById('minProfit');
+        const maxProfitInput = document.getElementById('maxProfit');
+        const defaultRanges = {
+            minRisk: undefined,
+            maxRisk: undefined,
+            minProfit: undefined,
+            maxProfit: undefined,
+            pointRadiusInput: 2 // Default point radius
+        };
+        [minRiskInput, maxRiskInput, minProfitInput, maxProfitInput].forEach(input => {
+            input.addEventListener('blur', () => {
+                if (datasetMap.size > 0) {
+                    drawChart();
+                    calculateMetrics();
+                    // If table is visible, regenerate it
+                    if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                        generateMetricsTable();
+                    }
+                }
+            });
+            input.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && datasetMap.size > 0) {
+                    drawChart();
+                    calculateMetrics();
+                    // If table is visible, regenerate it
+                    if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                        generateMetricsTable();
+                    }
+                }
+            });
+        });
+
+        function resetField(fieldId) {
+            document.getElementById(fieldId).value = defaultRanges[fieldId] ?? '';
+            if (datasetMap.size > 0) {
+                drawChart();
+                calculateMetrics();
+                if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                    generateMetricsTable();
+                }
+            }
+        }
+
+        function resetAllRanges() {
+            for (const key in initialRanges) {
+                document.getElementById(key).value = initialRanges[key] !== undefined ? initialRanges[key].toFixed(2) : '';
+            }
+            if (datasetMap.size > 0) {
+                drawChart();
+                calculateMetrics();
+                if (document.getElementById('metricsTableContainer').style.display === 'block') {
+                    generateMetricsTable();
+                }
+            }
+        }
+
+        function resetColors() {
+            const entries = Array.from(datasetMap.entries());
+            entries.forEach(([fileName, data], index) => {
+                const color = priorityFolders.includes(folder) ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
+                data.color = newColor;
+                data.pointRadius = 2; // Reset point radius to default
+                const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
+                if (entryDiv) {
+                    const colorPreview = entryDiv.querySelector('.color-preview-box-list');
+                    if (colorPreview) {
+                        colorPreview.style.backgroundColor = newColor;
+                    }
+                    const radiusInput = entryDiv.querySelector('.point-radius-input');
+                    if (radiusInput) {
+                        radiusInput.value = 2; // Update UI input
+                    }
+                    const modal = entryDiv.querySelector('.color-picker-modal');
+                    if (modal) {
+                        const hexInput = modal.querySelector('.hex-input');
+                        const rgbSliders = modal.querySelectorAll('.rgb-slider');
+                        const rgbNumbers = modal.querySelectorAll('.rgb-number');
+                        const rgbPreviewBoxes = modal.querySelectorAll('.rgb-preview-box');
+                        const opacitySlider = modal.querySelector('.opacity-slider');
+                        const opacityNumber = modal.querySelector('.opacity-number');
+                        const livePreview = modal.querySelector('.live-preview');
+                        const nativeColorInput = modal.querySelector('.native-color-input');
+
+                        const r = parseInt(newColor.slice(1, 3), 16);
+                        const g = parseInt(newColor.slice(3, 5), 16);
+                        const b = parseInt(newColor.slice(5, 7), 16);
+                        const a = 1;
+
+                        hexInput.value = newColor;
+                        rgbSliders[0].value = r;
+                        rgbSliders[1].value = g;
+                        rgbSliders[2].value = b;
+                        rgbNumbers[0].value = r;
+                        rgbNumbers[1].value = g;
+                        rgbNumbers[2].value = b;
+                        rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                        rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                        rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                        opacitySlider.value = a;
+                        opacityNumber.value = Math.round(a * 100); // Convert to percentage
+                        livePreview.style.backgroundColor = newColor;
+                        livePreview.style.opacity = a;
+                        nativeColorInput.value = newColor;
+                    }
+                }
+            });
+            if (datasetMap.size > 0) {
+                drawChart();
+            }
+            document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+        }
+        
+        document.getElementById('showTableBtn').addEventListener('click', generateMetricsTable);
+
+        /*function formatScientific(number, digits) {
+            const str = number.toExponential(digits);
+            const parts = str.split('e');
+            const coefficient = parts[0];
+            const exponentNum = parseInt(parts[1], 10);
+            const sign = exponentNum >= 0 ? '+' : '-';
+            const exponent = sign + Math.abs(exponentNum).toString().padStart(2, '0');
+            return `${coefficient}E${exponent}`;
+        }*/
+
+        let modalCounter = 0;
+
+        function addFileEntryUI(fileName, defaultColor) {
+            const container = document.getElementById('fileListContainer');
+            const entry = document.createElement('div');
+            entry.className = 'file-entry';
+            entry.id = `entry-${CSS.escape(fileName)}`;
+
+            const colorPreview = document.createElement('div');
+            colorPreview.className = 'color-preview-box-list';
+            colorPreview.style.backgroundColor = defaultColor;
+            colorPreview.style.opacity = datasetMap.get(fileName).opacity || 1;
+            colorPreview.title = '點擊選擇顏色';
+
+            const modalId = `color-picker-${modalCounter++}`;
+            const modal = document.createElement('div');
+            modal.className = 'color-picker-modal';
+            modal.style.display = 'none';
+            modal.innerHTML = `
+                <div class="color-picker-tabs">
+                    <button data-tab="common" class="active">常用顏色</button>
+                    <button data-tab="hexrgb">HEX & RGB</button>
+                    <button data-tab="native">原生選擇器</button>
+                </div>
+                <div class="color-picker-content active" id="${modalId}-common">
+                    <div class="common-colors">
+                        ${[
+                            ['#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050', '#00B050', '#5B9BD5', '#4472C4', '#002060', '#7030A0'],
+                            ['#FFE6E6', '#FF6666', '#FFF2CC', '#FFFF99', '#CCFF99', '#99FFCC', '#B3CDEB', '#A3BFFA', '#99A3CC', '#C2A3CC'],
+                            ['#FFCCCC', '#FF3333', '#FFE699', '#FFFF66', '#B3E67A', '#66FF99', '#99BCE2', '#8AA7FA', '#667AB3', '#AD80BF'],
+                            ['#FF9999', '#CC0000', '#FFD966', '#CCCC00', '#8CCB5E', '#33CC66', '#7FAAD8', '#7088F5', '#335099', '#985EAD'],
+                            ['#B30000', '#990000', '#BF9000', '#999900', '#6B9B44', '#26994D', '#4C739B', '#3957A6', '#263C66', '#5E3A73']
+                        ].map(column => column.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')).join('')}
+                    </div>
+                </div>
+                <div class="color-picker-content" id="${modalId}-hexrgb">
+                    <div class="hexrgb-inputs">
+                        <label><span>紅 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(${parseInt(defaultColor.slice(1, 3), 16)}, 0, 0);"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(1, 3), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>綠 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(0, ${parseInt(defaultColor.slice(3, 5), 16)}, 0);"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(3, 5), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>藍 :</span>
+                            <div class="rgb-preview-box" style="background-color: rgb(0, 0, ${parseInt(defaultColor.slice(5, 7), 16)});"></div>
+                            <input type="range" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-slider">
+                            <input type="number" min="0" max="255" value="${parseInt(defaultColor.slice(5, 7), 16)}" class="rgb-number">
+                        </label>
+                        <label><span>不透明度 :</span>
+                            <input type="range" min="0" max="1" step="0.01" value="${datasetMap.get(fileName).opacity || 1}" class="opacity-slider">
+                            <input type="number" min="0" max="100" step="1" value="${Math.round((datasetMap.get(fileName).opacity || 1) * 100)}" class="opacity-number">%
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
+                            <span>十六進位表示 :</span>
+                            <div class="color-preview-box live-preview" style="background-color: ${defaultColor}; opacity: ${datasetMap.get(fileName).opacity || 1};"></div>
+                            <input type="text" class="hex-input" placeholder="#FFFFFF" value="${defaultColor}" style="width: 100px;">
+                            <button class="confirm-btn">更新</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="color-picker-content" id="${modalId}-native">
+                    <input type="color" class="native-color-input" value="${defaultColor}" style="width: 115px; height: 40px; border: none; outline: none; cursor: pointer; background: transparent; padding: 0;">
+                </div>
+            `;
+
+            entry.appendChild(modal);
+
+            const tabs = modal.querySelectorAll('.color-picker-tabs button');
+            const contents = modal.querySelectorAll('.color-picker-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    const content = modal.querySelector(`#${modalId}-${tab.dataset.tab}`);
+                    if (content) {
+                        content.classList.add('active');
+                    } else {
+                        console.error(`Content element #${modalId}-${tab.dataset.tab} not found`);
+                    }
+                });
+            });
+
+            const colorSwatches = modal.querySelectorAll('.color-swatch');
+            colorSwatches.forEach(swatch => {
+                swatch.addEventListener('click', () => {
+                    const color = swatch.getAttribute('data-color');
+                    const opacity = parseFloat(modal.querySelector(`#${modalId}-hexrgb .opacity-number`).value) / 100 || 1;
+                    updateColor(color, opacity);
+                });
+            });
+
+            const radiusInput = document.createElement('input');
+            radiusInput.type = 'number';
+            radiusInput.className = 'point-radius-input';
+            radiusInput.min = '1';
+            radiusInput.max = '12';
+            radiusInput.step = '1';
+            radiusInput.value = datasetMap.get(fileName).pointRadius || 2;
+            radiusInput.style.width = '26px'; // Reduced from 60px
+            radiusInput.style.height = '20px'; // Explicitly set height to make it smaller
+            radiusInput.style.fontSize = '14px'; // Smaller font for better fit
+            radiusInput.style.marginLeft = '6px';
+            radiusInput.title = '點大小';
+            radiusInput.addEventListener('blur', () => {
+                let value = parseFloat(radiusInput.value);
+                if (isNaN(value) || value < 0.5) {
+                    value = 2;
+                    radiusInput.value = 2;
+                } else if (value > 20) {
+                    value = 20;
+                    radiusInput.value = 20;
+                }
+                datasetMap.get(fileName).pointRadius = value;
+                if (datasetMap.size > 0) {
+                    drawChart();
+                }
+            });
+            radiusInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    let value = parseFloat(radiusInput.value);
+                    if (isNaN(value) || value < 0.5) {
+                        value = 2;
+                        radiusInput.value = 2;
+                    } else if (value > 20) {
+                        value = 20;
+                        radiusInput.value = 20;
+                    }
+                    datasetMap.get(fileName).pointRadius = value;
+                    if (datasetMap.size > 0) {
+                        drawChart();
+                    }
+                }
+            });
+            entry.appendChild(radiusInput);
+
+            const updateColor = (hex, opacity = 1) => {
+                datasetMap.get(fileName).color = hex;
+                datasetMap.get(fileName).opacity = opacity;
+                colorPreview.style.backgroundColor = hex;
+                colorPreview.style.opacity = opacity;
+
+                const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
+                const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
+                const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+                const rgbPreviewBoxes = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-preview-box`);
+                const opacitySlider = modal.querySelector(`#${modalId}-hexrgb .opacity-slider`);
+                const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
+                const livePreview = modal.querySelector(`#${modalId}-hexrgb .live-preview`);
+
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+
+                hexInput.value = hex;
+                rgbSliders[0].value = r;
+                rgbSliders[1].value = g;
+                rgbSliders[2].value = b;
+                rgbNumbers[0].value = r;
+                rgbNumbers[1].value = g;
+                rgbNumbers[2].value = b;
+                rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                opacitySlider.value = opacity;
+                opacityNumber.value = Math.round(opacity * 100);
+                livePreview.style.backgroundColor = hex;
+                livePreview.style.opacity = opacity;
+
+                const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
+                nativeColorInput.value = hex;
+
+                drawChart();
+                modal.style.display = 'none';
+            };
+
+            const nativeColorInput = modal.querySelector(`#${modalId}-native .native-color-input`);
+            const updateFromNativeInput = () => {
+                const hex = nativeColorInput.value;
+                const opacity = parseFloat(modal.querySelector(`#${modalId}-hexrgb .opacity-number`).value) / 100 || 1;
+                updateColor(hex, opacity);
+            };
+
+            nativeColorInput.addEventListener('input', updateFromNativeInput);
+            nativeColorInput.addEventListener('change', updateFromNativeInput);
+
+            const hexInput = modal.querySelector(`#${modalId}-hexrgb .hex-input`);
+            const rgbSliders = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-slider`);
+            const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
+            const opacitySlider = modal.querySelector(`#${modalId}-hexrgb .opacity-slider`);
+            const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
+            const confirmBtn = modal.querySelector(`#${modalId}-hexrgb .confirm-btn`);
+            const livePreview = modal.querySelector(`#${modalId}-hexrgb .live-preview`);
+
+            const updatePreview = () => {
+                const r = parseInt(rgbNumbers[0].value) || 0;
+                const g = parseInt(rgbNumbers[1].value) || 0;
+                const b = parseInt(rgbNumbers[2].value) || 0;
+                const a = parseFloat(opacityNumber.value) / 100 || 0; // Use 0 if invalid
+                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+                    const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                    livePreview.style.backgroundColor = hex;
+                    livePreview.style.opacity = a;
+                    hexInput.value = hex;
+                }
+            };
+
+            const updateFromHex = () => {
+                const value = hexInput.value.trim();
+                if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    const r = parseInt(value.slice(1, 3), 16);
+                    const g = parseInt(value.slice(3, 5), 16);
+                    const b = parseInt(value.slice(5, 7), 16);
+                    const a = parseFloat(opacityNumber.value) / 100 || 0;
+                    rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                    rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                    rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                    livePreview.style.backgroundColor = value;
+                    livePreview.style.opacity = a;
+                    updateColor(value, a);
+                }
+            };
+
+            const updateFromRGB = () => {
+                const r = parseInt(rgbNumbers[0].value) || 0;
+                const g = parseInt(rgbNumbers[1].value) || 0;
+                const b = parseInt(rgbNumbers[2].value) || 0;
+                const a = parseFloat(opacityNumber.value) / 100 || 0;
+                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+                    const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                    rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
+                    rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
+                    rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
+                    livePreview.style.backgroundColor = hex;
+                    livePreview.style.opacity = a;
+                    updateColor(hex, a);
+                }
+            };
+
+            const syncSliderAndNumber = (slider, number, previewBox, channel) => {
+                slider.addEventListener('input', () => {
+                    if (channel === 'opacity') {
+                        const value = parseFloat(slider.value) || 0;
+                        number.value = Math.round(value * 100); // Convert decimal to percentage
+                        updatePreview(); // Update live preview with opacity
+                    } else {
+                        number.value = slider.value;
+                        updatePreview();
+                        const value = parseInt(slider.value) || 0;
+                        if (channel === 'r') {
+                            previewBox.style.backgroundColor = `rgb(${value}, 0, 0)`;
+                        } else if (channel === 'g') {
+                            previewBox.style.backgroundColor = `rgb(0, ${value}, 0)`;
+                        } else if (channel === 'b') {
+                            previewBox.style.backgroundColor = `rgb(0, 0, ${value})`;
+                        }
+                    }
+                });
+                number.addEventListener('input', () => {
+                    if (channel === 'opacity') {
+                        let value = parseFloat(number.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 100) value = 100;
+                        slider.value = value / 100; // Convert percentage to decimal
+                        number.value = value;
+                        updatePreview(); // Update live preview with opacity
+                    } else {
+                        let value = parseInt(number.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 255) value = 255;
+                        slider.value = value;
+                        number.value = value;
+                        updatePreview();
+                        if (channel === 'r') {
+                            previewBox.style.backgroundColor = `rgb(${value}, 0, 0)`;
+                        } else if (channel === 'g') {
+                            previewBox.style.backgroundColor = `rgb(0, ${value}, 0)`;
+                        } else if (channel === 'b') {
+                            previewBox.style.backgroundColor = `rgb(0, 0, ${value})`;
+                        }
+                    }
+                });
+                number.addEventListener('keypress', e => {
+                    if (e.key === 'Enter') {
+                        updateFromRGB();
+                    }
+                });
+            };
+
+            const rgbPreviewBoxes = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-preview-box`);
+            syncSliderAndNumber(rgbSliders[0], rgbNumbers[0], rgbPreviewBoxes[0], 'r');
+            syncSliderAndNumber(rgbSliders[1], rgbNumbers[1], rgbPreviewBoxes[1], 'g');
+            syncSliderAndNumber(rgbSliders[2], rgbNumbers[2], rgbPreviewBoxes[2], 'b');
+            syncSliderAndNumber(opacitySlider, opacityNumber, livePreview, 'opacity');
+
+            hexInput.addEventListener('input', updateFromHex);
+            hexInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') updateFromHex();
+            });
+
+            confirmBtn.addEventListener('click', () => {
+                const r = parseInt(rgbNumbers[0].value) || 0;
+                const g = parseInt(rgbNumbers[1].value) || 0;
+                const b = parseInt(rgbNumbers[2].value) || 0;
+                const a = parseFloat(opacityNumber.value) / 100 || 0;
+                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+                    const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                    updateColor(hex, a);
+                }
+            });
+
+            colorPreview.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.color-picker-modal').forEach(m => {
+                    if (m !== modal) m.style.display = 'none';
+                });
+                modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+                modal.style.left = `${e.pageX}px`;
+                modal.style.top = `${e.pageY + 10}px`;
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!modal.contains(e.target) && e.target !== colorPreview) {
+                    modal.style.display = 'none';
+                }
+            }, { once: false });
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.style.width = '80px';
+            nameInput.placeholder = '前緣名稱';
+            nameInput.value = datasetMap.get(fileName).name || '';
+            nameInput.addEventListener('blur', () => {
+                datasetMap.get(fileName).name = nameInput.value.trim();
+                drawChart();
+            });
+            nameInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    nameInput.blur();
+                }
+            });
+
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '刪除';
+            delBtn.onclick = () => {
+                datasetMap.delete(fileName);
+                entry.remove();
+                drawChart();
+            };
+
+            entry.appendChild(colorPreview);
+            entry.appendChild(nameInput);
+            entry.appendChild(document.createTextNode(datasetMap.get(fileName).simplifiedName));
+            entry.appendChild(delBtn);
+            container.appendChild(entry);
+            document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+        }
+
+        async function showDetailPanel(point, info, datasetName) {
+            const panel = document.getElementById('detailPanel');
+            const content = document.getElementById('detailContent');
+
+            if (!point || !info) {
+                content.innerHTML = '<p style="color:#999; font-style:italic;">無詳細資料可用</p>';
+                panel.style.display = 'block';
+                return;
+            }
+
+            // 依比例排序，相同比例時按照原始 index 順序
+            const sortedStocks = (info.stocks || []).map((s, idx) => ({ ...s, originalIndex: idx }))
+                .sort((a, b) => {
+                    if (b.percent !== a.percent) return b.percent - a.percent;
+                    return a.originalIndex - b.originalIndex;
+                });
+
+            // 生成唯一 ID
+            const pieChartId = `pieChart_${Date.now()}`;
+            const fundChartId = `fundChart_${Date.now()}`;
+
+            // 更新面板內容（左右分欄，各佔50%）
+            content.innerHTML = `
+                <div style="
+                    display: flex;
+                    gap: 20px;
+                    align-items: stretch;   /* 左右等高 */
+                    height: 100%;
+                    min-height: 300px;      /* 避免太矮 */
+                ">
+                    <!-- 左側：資金水位區域（圖表/表格切換） -->
+                    <div style="flex: 6; min-width: 100px; display: flex; flex-direction: column;">
+                        <div style="display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 15px;">
+                            <button id="btnShowChart" class="fund-toggle-btn active" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid #007BFF; color: #007BFF; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; font-weight: bold; transition: all 0.3s ease;">Chart</button>
+                            <button id="btnShowTable" class="fund-toggle-btn" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; color: #999; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; transition: all 0.3s ease;">Table</button>
+                        </div>
+                        <!-- 圖表容器：固定長寬比 4:3 -->
+                        <div id="fundChartContainer" style="width: 100%; aspect-ratio: 4 / 3; display: block;">
+                            <div style="position: relative; width: 100%; height: 100%;">
+                                <canvas id="${fundChartId}"></canvas>
+                            </div>
+                        </div>
+                        <!-- 表格容器 -->
+                        <div id="fundTableContainer" style="display: none;">
+                            <div id="fundLevelTableSection" style="font-family: 'Times New Roman', serif;">
+                                <p><strong>Loading fund level data...</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 右側：基本資訊 + 圓餅圖 -->
+                    <div style="flex: 4; min-width: 100px; padding-left: 30px; display: flex; flex-direction: column; gap: 20px;">
+                        <div style="margin-bottom: 20px;">
+                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Risk:</strong> ${formatNum(point.x, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Return:</strong> ${formatNum(point.y, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>TR:</strong> ${formatNum(point.y / point.x, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Num in Portfolio:</strong> ${info.count || 0} stock${(info.count || 0) === 1 ? '' : 's'}</p>
+                        </div>
+                        <div style="max-width: 500px; margin: 0 auto;">
+                            <canvas id="${pieChartId}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // 綁定切換按鈕事件
+            const btnShowChart = document.getElementById('btnShowChart');
+            const btnShowTable = document.getElementById('btnShowTable');
+            const chartContainer = document.getElementById('fundChartContainer');
+            const tableContainer = document.getElementById('fundTableContainer');
+
+            btnShowChart.addEventListener('click', () => {
+                chartContainer.style.display = 'block';
+                tableContainer.style.display = 'none';
+                btnShowChart.classList.add('active');
+                btnShowTable.classList.remove('active');
+                btnShowChart.style.borderBottomColor = '#007BFF';
+                btnShowChart.style.color = '#007BFF';
+                btnShowChart.style.fontWeight = 'bold';
+                btnShowTable.style.borderBottomColor = 'transparent';
+                btnShowTable.style.color = '#999';
+                btnShowTable.style.fontWeight = 'normal';
+            });
+
+            btnShowTable.addEventListener('click', () => {
+                chartContainer.style.display = 'none';
+                tableContainer.style.display = 'block';
+                btnShowTable.classList.add('active');
+                btnShowChart.classList.remove('active');
+                btnShowTable.style.borderBottomColor = '#007BFF';
+                btnShowTable.style.color = '#007BFF';
+                btnShowTable.style.fontWeight = 'bold';
+                btnShowChart.style.borderBottomColor = 'transparent';
+                btnShowChart.style.color = '#999';
+                btnShowChart.style.fontWeight = 'normal';
+            });
+
+            // 繪製圓餅圖
+            if (sortedStocks.length > 0) {
+                const ctx = document.getElementById(pieChartId).getContext('2d');
+                
+                // 生成顏色（使用色相環均勻分布）
+                const colors = sortedStocks.map((_, i) => {
+                    const hue = (i * 360 / sortedStocks.length) % 360;
+                    return `hsl(${hue}, 80%, 50%)`;
+                });
+
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: sortedStocks.map(s => s.name),
+                        datasets: [{
+                            data: sortedStocks.map(s => s.percent),
+                            backgroundColor: colors,
+                            borderWidth: 1,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 12
+                                    },
+                                    color: '#000',
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        return data.labels.map((label, i) => ({
+                                            text: `${label}: ${sortedStocks[i].display}`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        }));
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = sortedStocks[context.dataIndex].display;
+                                        return `${label}: ${value}`;
+                                    }
+                                },
+                                titleFont: {
+                                    family: "'標楷體', 'Times New Roman', serif",
+                                    size: 14
+                                },
+                                bodyFont: {
+                                    family: "'標楷體', 'Times New Roman', serif",
+                                    size: 14
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 傳入 fundChartId 讓它同時畫折線圖 + 表格
+            await drawFundLevelChartAndTable(fundChartId, info);
+        }
+
+        function hideDetailPanel() {
+            const panel = document.getElementById('detailPanel');
+            panel.style.display = 'none';
+        }
+
+        /*async function calculateAndDisplayFundLevel(portfolioInfo) {
+            const fundLevelSection = document.getElementById('fundLevelTableSection')
+            
+            // 獲取當前選中的日期
+            const yearInput = document.getElementById('yearInput');
+            const monthInput = document.getElementById('monthInput');
+            const year = yearInput.value;
+            const month = monthInput.value.padStart(2, '0');
+
+            if (!year || !month) {
+                fundLevelSection.innerHTML = '<p style="color:#999;">無法載入資金水位：未選擇日期</p>';
+                return;
+            }
+
+            try {
+                // 載入股價資料
+                const url = `https://pingi0131.github.io/compare_fronts/stock_price/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const text = await response.text();
+                const lines = text.trim().split('\n').map(line => line.trim()).filter(line => line);
+                
+                if (lines.length < 2) throw new Error('股價資料不足');
+
+                // 解析 CSV
+                const stockPriceData = lines.map(line => line.split(',').map(v => v.trim()));
+                
+                // 計算資金水位
+                const fundLevels = calculateFundLevel(stockPriceData, portfolioInfo);
+                
+                // 生成表格
+                let tableHTML = `
+                    <h4 style="margin-top: 20px; font-family: 'Times New Roman';">Daily Fund Level (初始資金: NT$ 10,000,000)</h4>
+                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                        <table style="width: 100%; border-collapse: collapse; font-family: 'Times New Roman';">
+                            <thead style="position: sticky; top: 0; background: #f0f0f0; z-index: 1;">
+                                <tr>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Day</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Fund Level (NT$)</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Change (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                const initFund = 10000000;
+                for (let i = 1; i < fundLevels.length; i++) {
+                    if (!fundLevels[i]) continue;
+                    
+                    const changePercent = ((fundLevels[i] - initFund) / initFund * 100).toFixed(2);
+                    const changeColor = fundLevels[i] >= initFund ? 'green' : 'red';
+                    
+                    tableHTML += `
+                        <tr>
+                            <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${i}</td>
+                            <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">${formatNum(fundLevels[i], 2)}</td>
+                            <td style="border: 1px solid #ccc; padding: 8px; text-align: right; color: ${changeColor};">
+                                ${changePercent > 0 ? '+' : ''}${changePercent}%
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                fundLevelSection.innerHTML = tableHTML;
+
+            } catch (error) {
+                fundLevelSection.innerHTML = `<p style="color: #c00;">無法計算資金水位: ${error.message}</p>`;
+                console.error('Fund level calculation error:', error);
+            }
+        }*/
+
+        function calculateFundLevel(stockPriceData, portfolioInfo) {
+            const initFund = 10000000;
+            let initRemainFund = initFund;
+            const allocateMoney = [];
+            const stockNum = [];
+            const remainMoney = [];
+            const fs = [];
+
+            // 從 portfolioInfo 中提取股票名稱和比例
+            const stocks = portfolioInfo.stocks.map(s => s.name);
+            const allocations = portfolioInfo.stocks.map(s => s.percent);
+
+            // 初始化分配資金陣列
+            for (let i = 0; i < stockPriceData[0].length; i++) {
+                allocateMoney[i] = 0;
+            }
+
+            // 分配資金
+            let index = 0;
+            for (let i = 0; i < stockPriceData[0].length; i++) {
+                if (index < stocks.length && stocks[index] === stockPriceData[0][i]) {
+                    const allocation = parseFloat(allocations[index].toFixed(2));
+                    allocateMoney[i] = initFund * allocation / 100;
+                    initRemainFund -= allocateMoney[i];
+                    index++;
+                }
+            }
+
+            // 計算每支股票的股數和剩餘現金
+            for (let i = 0; i < stockPriceData[0].length; i++) {
+                if (allocateMoney[i] > 0) {
+                    const price = parseFloat(stockPriceData[1][i]);
+                    stockNum[i] = Math.floor(allocateMoney[i] / price);
+                    remainMoney[i] = allocateMoney[i] - stockNum[i] * price;
+                } else {
+                    stockNum[i] = 0;
+                    remainMoney[i] = 0;
+                }
+            }
+
+            // 計算每日資金水位 (FS)
+            for (let i = 1; i < stockPriceData.length; i++) {
+                if (stockPriceData[i].length % 30 !== 0) break;
+                fs[i] = 0;
+                for (let j = 0; j < stockPriceData[0].length; j++) {
+                    const price = parseFloat(stockPriceData[i][j]);
+                    fs[i] += price * stockNum[j] + remainMoney[j];
+                }
+                fs[i] += initRemainFund;
+            }
+
+            return fs;
+        }
+
+        async function drawFundLevelChartAndTable(chartId, portfolioInfo) {
+            const fundLevelTableSection = document.getElementById('fundLevelTableSection');
+            const year = document.getElementById('yearInput').value;
+            const month = document.getElementById('monthInput').value.padStart(2, '0');
+            const dataSource = document.getElementById('dataSourceSelect').value;
+            const currentMarket = MARKET_MAP[dataSource] || 'DJIA';
+
+            if (!year || !month) {
+                fundLevelTableSection.innerHTML = '<p style="color:#999; font-family: \'標楷體\', \'Times New Roman\', serif;">無法載入：未選擇日期</p>';
+                return;
+            }
+
+            try {
+                const url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+                const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length < 2) throw new Error('資料不足');
+
+                const stockPriceData = lines.map(line => line.split(',').map(v => v.trim()));
+                const fundLevels = calculateFundLevel(stockPriceData, portfolioInfo);
+
+                // === 繪製折線圖 ===
+                const ctx = document.getElementById(chartId).getContext('2d');
+                const initFund = 10000000;
+                const labels = Array.from({ length: fundLevels.length - 1 }, (_, i) => `${i + 1}`);
+                const data = fundLevels.slice(1);
+
+                // 預先計算每日的 Gain %
+                const gainPercentages = data.map(fund => ((fund - initFund) / initFund * 100).toFixed(2));
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Fund Level',
+                                data: data,
+                                borderColor: '#007BFF',
+                                backgroundColor: '#007BFF',
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#007BFF',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                            label: 'Gain (%)',
+                            data: gainPercentages,
+                            backgroundColor: 'transparent',
+                            borderWidth: 0,
+                            pointRadius: 0,           // 不畫點
+                            pointHoverRadius: 0,      // 滑鼠無反應
+                            fill: false,
+                            yAxisID: 'y1'             // 綁定右軸
+                        }
+
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                ticks: {
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 16,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Day',
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 22,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: value => `${formatNum(value, 0)}`,
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 16,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Fund Level',
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 22,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000'
+                                }
+                            },
+                            y1: {
+                                position: 'right',
+                                grid: {
+                                    display: false
+                                },
+                                border: {
+                                    display: true,
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Gain (%)',
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 22,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: "'標楷體', 'Times New Roman', serif",
+                                        size: 16,
+                                        weight: 'bold'
+                                    },
+                                    color: '#000'
+                                },
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Daily Fund Level',
+                                font: {
+                                    family: "'標楷體', 'Times New Roman', serif",
+                                    size: 22,
+                                    weight: 'bold'
+                                },
+                                color: '#000'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return `Day: ${context[0].label}`;
+                                    },
+                                    label: function(context) {
+                                        const fund = context.parsed.y;
+                                        const gain = gainPercentages[context.dataIndex];
+                                        const sign = gain >= 0 ? '+' : '';
+                                        return [
+                                            `Fund: $${formatNum(fund, 2)}`,
+                                            `Gain: ${sign}${gain}%`
+                                        ];
+                                    }
+                                },
+                                titleFont: { family: "'標楷體', 'Times New Roman', serif", size: 14, weight: 'bold' },
+                                bodyFont: { family: "'標楷體', 'Times New Roman', serif", size: 14 },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                cornerRadius: 6,
+                                displayColors: false
+                            },
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // === 生成表格內容 ===
+                let tableHTML = `
+                    <h4 style="margin: 15px 0 8px; text-align: center; font-family: 'Times New Roman', serif;">Daily Fund Level Details</h4>
+                    <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Times New Roman', serif;">
+                            <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                                <tr>
+                                    <th style="border: 1px solid #ccc; padding: 6px;">Day</th>
+                                    <th style="border: 1px solid #ccc; padding: 6px;">Fund</th>
+                                    <th style="border: 1px solid #ccc; padding: 6px;">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (let i = 1; i < fundLevels.length; i++) {
+                    if (!fundLevels[i]) continue;
+                    const change = ((fundLevels[i] - initFund) / initFund * 100).toFixed(2);
+                    const color = fundLevels[i] >= initFund ? 'green' : 'red';
+                    tableHTML += `
+                        <tr>
+                            <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">${i}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px; text-align: right;">${formatNum(fundLevels[i], 2)}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px; text-align: right; color: ${color};">
+                                ${change > 0 ? '+' : ''}${change}%
+                            </td>
+                        </tr>
+                    `;
+                }
+                tableHTML += `</tbody></table></div>`;
+                fundLevelTableSection.innerHTML = tableHTML;
+
+            } catch (error) {
+                fundLevelTableSection.innerHTML = `<p style="color: #c00; font-family: '標楷體', 'Times New Roman', serif;">載入失敗: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+
+        function drawChart() {
+            const ctx = document.getElementById('riskProfitChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            combinedFront = datasetMap.size >= 2 ? combineNonDominatedSets(datasetMap) : null;
+            const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name, pointRadius }]) => ({
+                label: name || fileName,
+                data: data,
+                backgroundColor: color,
+                borderColor: color,
+                pointRadius: pointRadius || 2, // Use per-algorithm point radius
+                hoverRadius: pointRadius || 2, // Match hover radius to point radius
+                showLine: true,
+                fill: false,
+                tension: 0,
+                dragData: false
+            }));
+            if (combinedFront && combinedFront.risk.length > 0) {
+                const combinedData = [];
+                for (let i = 0; i < combinedFront.risk.length; i++) {
+                    combinedData.push({
+                        x: combinedFront.risk[i],
+                        y: combinedFront.profit[i]
+                    });
+                }
+                datasets.push({
+                    label: 'Combined Front',
+                    data: combinedData,
+                    backgroundColor: '#000000',
+                    borderColor: '#000000',
+                    pointRadius: 1,
+                    hoverRadius: 2, // 確保懸停時點大小不變
+                    showLine: true,
+                    fill: false,
+                    tension: 0,
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    dragData: false
+                });
+            }
+            const minX = parseFloat(minRiskInput.value);
+            const maxX = parseFloat(maxRiskInput.value);
+            const minY = parseFloat(minProfitInput.value);
+            const maxY = parseFloat(maxProfitInput.value);
+            const xMin = isNaN(minX) ? initialRanges.minRisk : minX;
+            const xMax = isNaN(maxX) ? initialRanges.maxRisk : maxX;
+            const yMin = isNaN(minY) ? initialRanges.minProfit : minY;
+            const yMax = isNaN(maxY) ? initialRanges.maxProfit : maxY;
+
+            // Get selected date and format title
+            // === 客製化標題：演算法名稱 in [WPM/EPM] Model Frontier with Fund Level in 月 年 ===
+            const selectedDate = document.querySelector('.date-entry.selected');
+            let title = 'Frontier with Fund Level';
+
+            if (selectedDate) {
+                const year = selectedDate.dataset.year;
+                const month = selectedDate.dataset.month;
+                const monthNames = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+                const monthName = monthNames[parseInt(month, 10) - 1] || 'Unknown';
+
+                // 取得目前選擇的 dataSource
+                const dataSourceSelect = document.getElementById('dataSourceSelect');
+                const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
+                const dataSourceValue = selectedOption.value; // e.g., "WPM_MoQTS", "EPM_H-MoQTS"
+
+                const parts = dataSourceValue.split(/[_\s]+/); // 分割符號：_ 或 - 或 空白
+                const modelType = parts[0] || 'Unknown';
+                const algorithmName = parts[1] || 'Unknown';
+
+                // 組合最終標題
+                title = `${algorithmName} Frontier in ${modelType} with Fund Level in ${monthName} ${year}`;
+            }
+            chartInstance = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        // 點擊圖表空白處 → 隱藏
+                        /*if (elements.length === 0) {
+                            hideDetailPanel();
+                            return;
+                        }*/
+
+                        const element = elements[0];
+                        const datasetIndex = element.datasetIndex;
+                        const dataIndex = element.index;
+
+                        const fileName = Array.from(datasetMap.keys())[datasetIndex];
+                        const dataEntry = datasetMap.get(fileName);
+
+                        if (!dataEntry || !dataEntry.portfolioInfo || dataIndex >= dataEntry.portfolioInfo.length) {
+                            hideDetailPanel();
+                            alert('錯誤：無法取得該點的投資組合資料');
+                            return;
+                        }
+
+                        const point = dataEntry.data[dataIndex];
+                        const info = dataEntry.portfolioInfo[dataIndex];
+
+                        // 顯示面板 + 彈出 alert
+                        showDetailPanel(point, info, dataEntry.name || fileName);
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title, // Dynamic title with date
+                            font: {
+                                family: 'Times New Roman',
+                                size: 32,
+                                weight: 'bold'
+                            },
+                            color: '#000'
+                        },
+                        tooltip: {
+                            titleFont: {
+                                family: 'Times New Roman',
+                                size: 14
+                            },
+                            bodyFont: {
+                                family: 'Times New Roman',
+                                size: 14
+                            },
+                            //bodyAlign: 'center',
+                            //itemAlign: 'center',
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.parsed;
+                                    const datasetIndex = context.datasetIndex;
+                                    const dataIndex = context.dataIndex;
+                                    const fileName = Array.from(datasetMap.keys())[datasetIndex];
+                                    const dataEntry = datasetMap.get(fileName);
+
+                                    // 防呆：若無 portfolioInfo 或索引超出範圍
+                                    if (!dataEntry || !dataEntry.portfolioInfo || dataIndex >= dataEntry.portfolioInfo.length) {
+                                        return `${context.dataset.label}: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`;
+                                    }
+
+                                    const info = dataEntry.portfolioInfo[dataIndex];
+                                    const maxDisplay = 3;
+
+                                    let displayedStocks;
+                                    let hasMore = info.stocks.length > maxDisplay;
+
+                                    if (info.stocks.length > maxDisplay) {
+                                        // 僅超過 3 檔時排序：比例降序 → 原始 index 升序
+                                        displayedStocks = info.stocks
+                                            .map((stock, index) => ({ ...stock, originalIndex: index }))
+                                            .sort((a, b) => {
+                                                if (b.percent !== a.percent) return b.percent - a.percent;
+                                                return a.originalIndex - b.originalIndex;
+                                            })
+                                            .slice(0, maxDisplay);
+                                    } else {
+                                        // 3 檔或以下：直接用原始順序
+                                        displayedStocks = info.stocks.slice(0, maxDisplay);
+                                    }
+
+                                    const stockStr = displayedStocks
+                                        .map(s => `${s.name}(${s.display})`)
+                                        .join(' ') + (hasMore ? ' ...' : '');
+
+                                    return [
+                                        `Risk: ${formatNum(point.x)} Return: ${formatNum(point.y)} TR: ${formatNum(point.y/point.x,6)}`,
+                                        `Contain ${info.count} stocks: ${stockStr}`
+                                    ];
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                font: {
+                                    family: 'Times New Roman',
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#000000'
+                            }
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'xy',
+                                threshold: 2,
+                            },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'xy',
+                            }
+                        },
+                        dragData: {
+                            enabled: true,
+                            onDragStart: function (e, datasetIndex, index, value) {
+                                console.log('Drag started:', datasetIndex, index, value);
+                            },
+                            onDrag: function (e, datasetIndex, index, value) {
+                                const fileName = Array.from(datasetMap.keys())[datasetIndex];
+                                const dataset = datasetMap.get(fileName);
+                                dataset.data[index] = { x: value.x, y: value.y };
+                                datasetMap.set(fileName, dataset);
+                            },
+                            onDragEnd: function (e, datasetIndex, index, value) {
+                                const fileName = Array.from(datasetMap.keys())[datasetIndex];
+                                const dataset = datasetMap.get(fileName);
+                                dataset.data[index] = { x: value.x, y: value.y };
+                                datasetMap.set(fileName, dataset);
+                                drawChart(); // Redraw chart and recalculate metrics
+                            }
+                        },
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Daily Risk',
+                                font: {
+                                    family: 'Times New Roman',
+                                    size: 24,
+                                    weight: 'bold'
+                                },
+                                color: '#000000'
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Times New Roman',
+                                    size: 20,
+                                    weight: 'bold'
+                                },
+                                color: '#000000'
+                            },
+                            min: xMin,
+                            max: xMax
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Daily Expected Return',
+                                font: {
+                                    family: 'Times New Roman',
+                                    size: 24,
+                                    weight: 'bold'
+                                },
+                                color: '#000000'
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Times New Roman',
+                                    size: 20,
+                                    weight: 'bold'
+                                },
+                                color: '#000000'
+                            },
+                            min: yMin,
+                            max: yMax
+                        }
+                    }
+                }
+            });
+            document.getElementById('chart-container').style.display = 'block';
+            document.getElementById('chart-container').style.margin = '20px auto';
+            document.getElementById('chart-container').addEventListener('dblclick', function () {
+                chartInstance.resetZoom();
+            });
+            document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+        }
+    </script>
+</body>
+
+</html>
