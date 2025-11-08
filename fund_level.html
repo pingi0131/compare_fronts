@@ -2220,8 +2220,8 @@
                                 borderColor: '#007BFF',
                                 backgroundColor: '#007BFF',
                                 borderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
+                                pointRadius: 5,
+                                pointHoverRadius: 5,
                                 pointBackgroundColor: '#007BFF',
                                 pointBorderColor: '#fff',
                                 pointBorderWidth: 1,
@@ -2229,15 +2229,17 @@
                                 tension: 0.1
                             },
                             {
-                            label: 'Gain (%)',
-                            data: gainPercentages,
-                            backgroundColor: 'transparent',
-                            borderWidth: 0,
-                            pointRadius: 0,           // 不畫點
-                            pointHoverRadius: 0,      // 滑鼠無反應
-                            fill: false,
-                            yAxisID: 'y1'             // 綁定右軸
-                        }
+                                label: 'Gain (%)',
+                                data: gainPercentages,
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                yAxisID: 'y1',             // 綁定右軸
+                                hoverBackgroundColor: 'transparent',
+                                hoverBorderColor: 'transparent',
+                                hitRadius: 0,
+                                tooltip: { enabled: false }
+                            }
 
                         ]
                     },
@@ -2329,14 +2331,16 @@
                                 },
                                 color: '#000'
                             },
+                            legend: { display: false },
                             tooltip: {
                                 callbacks: {
                                     title: function(context) {
                                         return `Day: ${context[0].label}`;
                                     },
                                     label: function(context) {
-                                        const fund = context.parsed.y;
-                                        const gain = gainPercentages[context.dataIndex];
+                                        const idx = context.dataIndex;
+                                        const fund = data[idx];  // 直接從原始 data 取
+                                        const gain = gainPercentages[idx];
                                         const sign = gain >= 0 ? '+' : '';
                                         return [
                                             `Fund: $${formatNum(fund, 2)}`,
