@@ -695,7 +695,7 @@
         #detailPanel h3 {
             text-align: center;              /* 文字水平置中 */
             font-family: "標楷體", "Times New Roman", serif; /* 指定字體，優先使用標楷體 */
-            font-size: 30px;                 /* 放大字體，可依需要調整 */
+            font-size: 36px;                 /* 放大字體，可依需要調整 */
             font-weight: bold;               /* 加粗 */
         }
 
@@ -959,7 +959,6 @@
                 sidebar.querySelectorAll('.date-entry').forEach(entry => {
                     entry.classList.remove('selected');
                 });
-                hideDetailPanel();  // 清空投資組合詳細資料
             });
         }
 
@@ -1308,9 +1307,6 @@
                 if (datasetMap.size > 0) {
                     drawChart();
                     document.getElementById('resetColorsBtn').style.display = 'inline-block';
-                    /*loadStockPrice(year, paddedMonth, dataSource).then(() => {
-                        document.getElementById('stockPriceContainer').style.display = 'none';
-                    });*/
                 } else {
                     alert(`沒有成功載入任何有效 CSV 檔案`);
                 }
@@ -1319,72 +1315,6 @@
                 alert(`載入失敗: ${error.message}`);
             }
         }
-
-        /*async function loadStockPrice(year, paddedMonth, dataSource) {
-            const currentMarket = MARKET_MAP[dataSource] || 'DJIA'; // 預設 DJIA
-            const url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
-            const container = document.getElementById('stockPriceContainer');
-            const table = document.getElementById('stockPriceTable');
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            const errorDiv = document.getElementById('stockPriceError');
-            alert(`${currentMarket}`)
-            alert(`${url}`)
-
-            // 清空舊內容
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-            errorDiv.style.display = 'none';
-            container.style.display = 'none';
-
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-
-                const lines = text.trim().split('\n').map(line => line.trim()).filter(line => line);
-                if (lines.length < 1) throw new Error('CSV 檔案為空');
-
-                // 解析標題列
-                const headers = lines[0].split(',').map(h => h.trim());
-
-                // 建立表頭
-                const headerRow = document.createElement('tr');
-                headers.forEach(header => {
-                    const th = document.createElement('th');
-                    th.innerHTML = `<strong>${header}</strong>`;
-                    headerRow.appendChild(th);
-                });
-                thead.appendChild(headerRow);
-
-                // 讀取每一筆資料（從第二列開始）
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(',').map(v => v.trim());
-                    const row = document.createElement('tr');
-
-                    values.forEach((value, index) => {
-                        const td = document.createElement('td');
-                        const num = parseFloat(value);
-
-                        // 若為有效數字，格式化為 3 位小數；否則原樣顯示
-                        if (!isNaN(num) && value !== '') {
-                            td.textContent = num.toFixed(3);
-                        } else {
-                            td.textContent = value || '-';
-                        }
-                        row.appendChild(td);
-                    });
-
-                    tbody.appendChild(row);
-                }
-
-                container.style.display = 'block';
-            } catch (err) {
-                errorDiv.textContent = `無法載入股價資料：${err.message}`;
-                errorDiv.style.display = 'block';
-                container.style.display = 'block';
-            }
-        }*/
 
         const minRiskInput = document.getElementById('minRisk');
         const maxRiskInput = document.getElementById('maxRisk');
@@ -1905,7 +1835,7 @@
                     min-height: 300px;      /* 避免太矮 */
                 ">
                     <!-- 左側：資金水位區域（圖表/表格切換） -->
-                    <div style="flex: 6; min-width: 100px; display: flex; flex-direction: column;">
+                    <div style="flex: 5.5; min-width: 100px; display: flex; flex-direction: column;">
                         <div style="display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 15px;">
                             <button id="btnShowChart" class="fund-toggle-btn active" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid #007BFF; color: #007BFF; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; font-weight: bold; transition: all 0.3s ease;">Chart</button>
                             <button id="btnShowTable" class="fund-toggle-btn" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; color: #999; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; transition: all 0.3s ease;">Table</button>
@@ -1924,12 +1854,12 @@
                         </div>
                     </div>
                     <!-- 右側：基本資訊 + 圓餅圖 -->
-                    <div style="flex: 4; min-width: 100px; padding-left: 30px; display: flex; flex-direction: column; gap: 20px;">
+                    <div style="flex: 4.5; min-width: 100px; padding-left: 10px; display: flex; flex-direction: column; gap: 20px;">
                         <div style="margin-bottom: 20px;">
-                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Risk:</strong> ${formatNum(point.x, 20)}</p>
-                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Return:</strong> ${formatNum(point.y, 20)}</p>
-                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>TR:</strong> ${formatNum(point.y / point.x, 20)}</p>
-                            <p style="font-family: 'Times New Roman', serif; font-size: 16px; margin: 8px 0;"><strong>Num in Portfolio:</strong> ${info.count || 0} stock${(info.count || 0) === 1 ? '' : 's'}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Risk:</strong> ${formatNum(point.x, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Return:</strong> ${formatNum(point.y, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>TR:</strong> ${formatNum(point.y / point.x, 20)}</p>
+                            <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Constituents:</strong> ${info.count || 0} stock${(info.count || 0) === 1 ? '' : 's'}</p>
                         </div>
                         <div style="max-width: 500px; margin: 0 auto;">
                             <canvas id="${pieChartId}"></canvas>
@@ -1983,6 +1913,14 @@
                     return `hsl(${hue}, 80%, 50%)`;
                 });
 
+                // 根據數量動態調整字體大小
+                const itemCount = sortedStocks.length;
+                const fontSize = itemCount <= 5 ? 24 :
+                                 itemCount <= 10 ? 21 :
+                                 itemCount <= 15 ? 19 :
+                                 itemCount <= 20 ? 16 :
+                                 itemCount <= 25 ? 12 : 10
+
                 new Chart(ctx, {
                     type: 'pie',
                     data: {
@@ -1991,7 +1929,8 @@
                             data: sortedStocks.map(s => s.percent),
                             backgroundColor: colors,
                             borderWidth: 1,
-                            borderColor: '#fff'
+                            borderColor: '#fff',
+                            hoverOffset: 10
                         }]
                     },
                     options: {
@@ -2002,8 +1941,8 @@
                                 position: 'right',
                                 labels: {
                                     font: {
-                                        family: "'標楷體', 'Times New Roman', serif",
-                                        size: 12
+                                        family: " 'Times New Roman', serif",
+                                        size: fontSize
                                     },
                                     color: '#000',
                                     generateLabels: function(chart) {
@@ -2026,12 +1965,12 @@
                                     }
                                 },
                                 titleFont: {
-                                    family: "'標楷體', 'Times New Roman', serif",
-                                    size: 14
+                                    family: " 'Times New Roman', serif",
+                                    size: 0
                                 },
                                 bodyFont: {
-                                    family: "'標楷體', 'Times New Roman', serif",
-                                    size: 14
+                                    family: " 'Times New Roman', serif",
+                                    size: Math.max(fontSize,18)
                                 }
                             }
                         }
@@ -2051,84 +1990,6 @@
             }
             panel.style.display = 'none';
         }
-
-        /*async function calculateAndDisplayFundLevel(portfolioInfo) {
-            const fundLevelSection = document.getElementById('fundLevelTableSection')
-            
-            // 獲取當前選中的日期
-            const yearInput = document.getElementById('yearInput');
-            const monthInput = document.getElementById('monthInput');
-            const year = yearInput.value;
-            const month = monthInput.value.padStart(2, '0');
-
-            if (!year || !month) {
-                fundLevelSection.innerHTML = '<p style="color:#999;">無法載入資金水位：未選擇日期</p>';
-                return;
-            }
-
-            try {
-                // 載入股價資料
-                const url = `https://pingi0131.github.io/compare_fronts/stock_price/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const text = await response.text();
-                const lines = text.trim().split('\n').map(line => line.trim()).filter(line => line);
-                
-                if (lines.length < 2) throw new Error('股價資料不足');
-
-                // 解析 CSV
-                const stockPriceData = lines.map(line => line.split(',').map(v => v.trim()));
-                
-                // 計算資金水位
-                const fundLevels = calculateFundLevel(stockPriceData, portfolioInfo);
-                
-                // 生成表格
-                let tableHTML = `
-                    <h4 style="margin-top: 20px; font-family: 'Times New Roman';">Daily Fund Level (初始資金: NT$ 10,000,000)</h4>
-                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
-                        <table style="width: 100%; border-collapse: collapse; font-family: 'Times New Roman';">
-                            <thead style="position: sticky; top: 0; background: #f0f0f0; z-index: 1;">
-                                <tr>
-                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Day</th>
-                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Fund Level (NT$)</th>
-                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Change (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-
-                const initFund = 10000000;
-                for (let i = 1; i < fundLevels.length; i++) {
-                    if (!fundLevels[i]) continue;
-                    
-                    const changePercent = ((fundLevels[i] - initFund) / initFund * 100).toFixed(2);
-                    const changeColor = fundLevels[i] >= initFund ? 'green' : 'red';
-                    
-                    tableHTML += `
-                        <tr>
-                            <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${i}</td>
-                            <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">${formatNum(fundLevels[i], 2)}</td>
-                            <td style="border: 1px solid #ccc; padding: 8px; text-align: right; color: ${changeColor};">
-                                ${changePercent > 0 ? '+' : ''}${changePercent}%
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                tableHTML += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                fundLevelSection.innerHTML = tableHTML;
-
-            } catch (error) {
-                fundLevelSection.innerHTML = `<p style="color: #c00;">無法計算資金水位: ${error.message}</p>`;
-                console.error('Fund level calculation error:', error);
-            }
-        }*/
 
         function calculateFundLevel(stockPriceData, portfolioInfo) {
             const initFund = 10000000;
@@ -2228,9 +2089,9 @@
                                 backgroundColor: '#007BFF',
                                 borderWidth: 2,
                                 pointRadius: 5,
-                                pointHoverRadius: 5,
+                                pointHoverRadius: 6,
                                 pointBackgroundColor: '#007BFF',
-                                pointBorderColor: '#fff',
+                                pointBorderColor: '#0069D9',
                                 pointBorderWidth: 1,
                                 fill: false,
                                 tension: 0.1
@@ -2348,7 +2209,7 @@
                                         const idx = context.dataIndex;
                                         const fund = data[idx];  // 直接從原始 data 取
                                         const gain = gainPercentages[idx];
-                                        const sign = gain >= 0 ? '+' : '';
+                                        const sign = data[idx] - initFund > 0 ? '+' : '';
                                         return [
                                             `Fund: $${formatNum(fund, 2)}`,
                                             `Gain: ${sign}${gain}%`
