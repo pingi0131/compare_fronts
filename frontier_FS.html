@@ -86,6 +86,7 @@
 
         .date-inputs button:hover::after {
             background-color: #ffffff;
+            font-family: 'Times New Roman', Times, serif;
             content: "Load";
             position: absolute;
             top: 100%;
@@ -384,72 +385,6 @@
 
         .show-table-btn:hover {
             background-color: #0056b3;
-        }
-
-        .metrics-results {
-            margin-top: 20px;
-            font-family: monospace;
-            background: #f0f0f0;
-            padding: 10px;
-            border-radius: 6px;
-            white-space: pre;
-        }
-
-        #metricsTable {
-            /* 精緻表格預設字體大小 */
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 24px;
-            font-weight: 500;
-            text-align: center;
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        #metricsTable td:nth-child(5) {
-            font-size: 19px;
-            /* Hit Rate 欄位專用字體大小 */
-        }
-
-        #metricsTable td:nth-child(1) {
-            font-weight: 800;
-            font-size: 20px;
-        }
-
-        #metricsTable th,
-        #metricsTable td {
-            padding: 10px;
-            border: 1px solid #ccc;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #metricsTable th {
-            background-color: #f0f0f0;
-            font-weight: 800;
-        }
-
-        #metricsTable th,
-        #metricsTable td {
-            width: calc(120% / 7);
-        }
-
-        #metricsTable td.best {
-            color: red;
-            font-weight: bold;
-        }
-
-        #metricsTable tr.combined-front {
-            background-color: #e0f0ff;
-            font-weight: bold;
-        }
-
-        #metricsTable tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        #metricsTable tbody tr:hover {
-            background-color: #e0e0e0;
         }
 
         /* Custom Color Picker Modal Styles */
@@ -2325,24 +2260,32 @@
                                 },
                                 ticks: {
                                     callback: function(value, index, ticks) {
-                                        // 根據 y 軸範圍計算對應的 Gain %
                                         const yScale = this.chart.scales.y;
                                         const yMin = yScale.min;
                                         const yMax = yScale.max;
-                                        const range = yMax - yMin;
+                                        const tickCount = yScale.ticks.length;
+                                        const initFund = 10_000_000;
                                         
-                                        // 將 y1 的刻度值映射回對應的資金值
-                                        const fundValue = yMin + (value / 100) * range;
-                                        const gainPercent = ((fundValue - initFund) / initFund * 100).toFixed(2);
-                                        
-                                        return `${gainPercent}%`;
+                                        // 根據主 y 軸 tick index 對應的實際 fund 值
+                                        const fundValue = yMin + (index / (tickCount - 1)) * (yMax - yMin);
+                                        const gainPercent = (fundValue - initFund) / initFund * 100;
+
+                                        const rangeRatio = (yMax - yMin) / initFund;
+                                        const decimals = rangeRatio > 0.10 ? 0 : rangeRatio > 0.05 ? 1 : 2;
+
+
+                                        const sign = gainPercent >= 0 ? '+' : '';
+                                        return `${sign}${gainPercent.toFixed(decimals)}%`;
                                     },
-                                    font: { family: " 'Times New Roman', serif", size: 20, weight: 'bold' },
+                                    font: { family: "'Times New Roman', serif", size: 20, weight: 'bold' },
                                     color: '#000'
                                 },
-                                // 讓 y1 軸範圍與 y 軸同步
-                                min: 0,
-                                max: 100
+                                // 讓 y1 範圍與 y 軸同步
+                                afterDataLimits: function(scale) {
+                                    const yScale = scale.chart.scales.y;
+                                    scale.min = yScale.min;
+                                    scale.max = yScale.max;
+                                }
                             }
                         },
                         plugins: {
@@ -2385,7 +2328,7 @@
 
                 // === 表格保持不變（只顯示 Portfolio）===
                 let tableHTML = `
-                    <h4 style="margin: 15px 0 8px; text-align: center; font-family: 'Times New Roman', serif;">Portfolio Daily Funds</h4>
+                    <h4 style="margin: 15px 0 8px; text-align: center; font-family: 'Times New Roman', serif;"></h4>
                     <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 16px; font-family: 'Times New Roman', serif;">
                             <thead style="background: #f8f9fa; position: sticky; top: 0; font-size: 18px; font-weight: bold;">
