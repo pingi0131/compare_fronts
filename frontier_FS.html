@@ -695,7 +695,7 @@
         #detailPanel h3 {
             text-align: center;              /* 文字水平置中 */
             font-family: "標楷體", "Times New Roman", serif; /* 指定字體，優先使用標楷體 */
-            font-size: 36px;                 /* 放大字體，可依需要調整 */
+            font-size: 40px;                 /* 放大字體，可依需要調整 */
             font-weight: bold;               /* 加粗 */
         }
 
@@ -705,6 +705,120 @@
 
         .fund-toggle-btn.active {
             font-weight: bold;
+        }
+
+        /* Fund Level 標題與切換按鈕共用列 */
+        #detailPanel .fund-header {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            /*padding: 0 90px 10px 0;*/ /* 右側留白給按鈕 */
+            border-bottom: 2px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        /* Fund Level 標題文字 */
+        #detailPanel .fund-header h4 {
+            margin: 0;
+            font-size: 36px !important;
+            font-weight: bold;
+            font-family: 'Times New Roman', serif !important;
+            color: #000;
+            text-align: center;
+            width: fit-content;
+            position: relative;
+            z-index: 1;
+        }
+
+        #detailPanel .fund-toggle-group {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            z-index: 100; /* 關鍵：高於 canvas */
+        }
+
+        /* 切換按鈕 */
+        #detailPanel .fund-toggle-btn {
+            background: #e6e6e6;
+            color: #333;
+            border: none;
+            padding: 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 22px !important;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 80px;           /* 固定寬度 */
+            height: 40px;          /* 固定高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 101; /* 更高 */
+        }
+        /* 選中狀態：深灰底 + 白字 */
+        #detailPanel .fund-toggle-btn.active {
+            background: #a5a8ab !important;
+            color: #000 !important;
+        }
+
+        /* 非選中：淺灰底 + 黑字 */
+        #detailPanel .fund-toggle-btn:not(.active) {
+            color: #000;
+        }
+
+        /* 懸停（非選中） */
+        #detailPanel .fund-toggle-btn:hover:not(.active) {
+            background: #d0d0d0;
+        }
+
+        #detailPanel .fund-toggle-btn:first-child {
+            border-right: none !important;
+        }
+
+        /* 分隔線：只在第一個按鈕右邊 */
+        #detailPanel .fund-toggle-btn:first-child::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background: #aaa;
+        }
+
+        /* 圖表與表格容器 */
+        #detailPanel #fundChartContainer,
+        #detailPanel #fundTableContainer {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            min-height: 380px;
+            /* 移除 border */
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        #detailPanel #fundChartContainer canvas {
+            pointer-events: none; /* 圖表本身不攔截點擊 */
+        }
+
+        #detailPanel .pie-chart-wrapper {
+            width: 75%;           /* ← 這裡改成 60% 也可以 */
+            max-width: 800px;     /* 防止過大 */
+            margin: 0 auto;       /* 水平置中 */
+            aspect-ratio: 1 / 1;  /* 保持正圓 */
         }
 
     </style>
@@ -1432,16 +1546,6 @@
         
         document.getElementById('showTableBtn').addEventListener('click', generateMetricsTable);
 
-        /*function formatScientific(number, digits) {
-            const str = number.toExponential(digits);
-            const parts = str.split('e');
-            const coefficient = parts[0];
-            const exponentNum = parseInt(parts[1], 10);
-            const sign = exponentNum >= 0 ? '+' : '-';
-            const exponent = sign + Math.abs(exponentNum).toString().padStart(2, '0');
-            return `${coefficient}E${exponent}`;
-        }*/
-
         let modalCounter = 0;
 
         function addFileEntryUI(fileName, defaultColor) {
@@ -1834,34 +1938,41 @@
                     height: 100%;
                     min-height: 300px;      /* 避免太矮 */
                 ">
-                    <!-- 左側：資金水位區域（圖表/表格切換） -->
-                    <div style="flex: 5.5; min-width: 100px; display: flex; flex-direction: column;">
-                        <div style="display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 15px;">
-                            <button id="btnShowChart" class="fund-toggle-btn active" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid #007BFF; color: #007BFF; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; font-weight: bold; transition: all 0.3s ease;">Chart</button>
-                            <button id="btnShowTable" class="fund-toggle-btn" style="flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; color: #999; cursor: pointer; font-family: 'Times New Roman', serif; font-size: 18px; transition: all 0.3s ease;">Table</button>
-                        </div>
-                        <!-- 圖表容器：固定長寬比 4:3 -->
-                        <div id="fundChartContainer" style="width: 100%; aspect-ratio: 4 / 3; display: block;">
-                            <div style="position: relative; width: 100%; height: 100%;">
-                                <canvas id="${fundChartId}"></canvas>
+                    <!-- 左側：資金水位區域 -->
+                        <div style="flex: 5.5; min-width: 100px; display: flex; flex-direction: column;">
+                            <!-- 標題 + 切換按鈕（共用一行） -->
+                            <div class="fund-header">
+                                
+                                <div class="fund-toggle-group">
+                                    <button id="btnShowChart" class="fund-toggle-btn active">Chart</button>
+                                    <button id="btnShowTable" class="fund-toggle-btn">Table</button>
+                                </div>
+                                <h4>Funds Standardization</h4>
+                            </div>
+
+                            <!-- 圖表容器 -->
+                            <div id="fundChartContainer" style="width: 100%; aspect-ratio: 4 / 3; display: block;">
+                                <div style="position: relative; width: 100%; height: 100%;">
+                                    <canvas id="${fundChartId}"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 表格容器 -->
+                            <div id="fundTableContainer" style="display: none;">
+                                <div id="fundLevelTableSection" style="font-family: 'Times New Roman', serif;">
+                                    <p><strong>Loading Funds Standardization...</strong></p>
+                                </div>
                             </div>
                         </div>
-                        <!-- 表格容器 -->
-                        <div id="fundTableContainer" style="display: none;">
-                            <div id="fundLevelTableSection" style="font-family: 'Times New Roman', serif;">
-                                <p><strong>Loading fund level data...</strong></p>
-                            </div>
-                        </div>
-                    </div>
                     <!-- 右側：基本資訊 + 圓餅圖 -->
-                    <div style="flex: 4.5; min-width: 100px; padding-left: 10px; display: flex; flex-direction: column; gap: 20px;">
+                    <div style="flex: 4.5; min-width: 300px; padding-left: 10px; display: flex; flex-direction: column; gap: 20px;">
                         <div style="margin-bottom: 20px;">
                             <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Risk:</strong> ${formatNum(point.x, 20)}</p>
                             <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Return:</strong> ${formatNum(point.y, 20)}</p>
                             <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>TR:</strong> ${formatNum(point.y / point.x, 20)}</p>
                             <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Constituents:</strong> ${info.count || 0} stock${(info.count || 0) === 1 ? '' : 's'}</p>
                         </div>
-                        <div style="max-width: 500px; margin: 0 auto;">
+                        <div class="pie-chart-wrapper">
                             <canvas id="${pieChartId}"></canvas>
                         </div>
                     </div>
@@ -1919,7 +2030,7 @@
                                  itemCount <= 10 ? 21 :
                                  itemCount <= 15 ? 19 :
                                  itemCount <= 20 ? 16 :
-                                 itemCount <= 25 ? 12 : 10
+                                 itemCount <= 25 ? 13 : 11
 
                 new Chart(ctx, {
                     type: 'pie',
@@ -2083,7 +2194,7 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Fund Level',
+                                label: 'Funds Standardization',
                                 data: data,
                                 borderColor: '#007BFF',
                                 backgroundColor: '#007BFF',
@@ -2151,7 +2262,7 @@
                                 },
                                 title: {
                                     display: true,
-                                    text: 'Fund Level',
+                                    text: 'Funds Standardization',
                                     font: {
                                         family: "'標楷體', 'Times New Roman', serif",
                                         size: 22,
@@ -2190,8 +2301,8 @@
                         },
                         plugins: {
                             title: {
-                                display: true,
-                                text: 'Daily Fund Level',
+                                display: false,
+                                text: 'Daily Funds Standardization',
                                 font: {
                                     family: "'標楷體', 'Times New Roman', serif",
                                     size: 22,
@@ -2229,7 +2340,7 @@
 
                 // === 生成表格內容 ===
                 let tableHTML = `
-                    <h4 style="margin: 15px 0 8px; text-align: center; font-family: 'Times New Roman', serif;">Daily Fund Level Details</h4>
+                    <h4 style="margin: 15px 0 8px; text-align: center; font-family: 'Times New Roman', serif;"></h4>
                     <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Times New Roman', serif;">
                             <thead style="background: #f8f9fa; position: sticky; top: 0;">
@@ -2249,8 +2360,8 @@
                     tableHTML += `
                         <tr>
                             <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">${i}</td>
-                            <td style="border: 1px solid #ccc; padding: 5px; text-align: right;">${formatNum(fundLevels[i], 2)}</td>
-                            <td style="border: 1px solid #ccc; padding: 5px; text-align: right; color: ${color};">
+                            <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">${formatNum(fundLevels[i], 2)}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px; text-align: center; color: ${color};">
                                 ${change > 0 ? '+' : ''}${change}%
                             </td>
                         </tr>
@@ -2316,7 +2427,7 @@
             // Get selected date and format title
             // === 客製化標題：演算法名稱 in [WPM/EPM] Model Frontier with Fund Level in 月 年 ===
             const selectedDate = document.querySelector('.date-entry.selected');
-            let title = 'Frontier with Fund Level';
+            let title = 'Frontier with Funds Standardization';
 
             if (selectedDate) {
                 const year = selectedDate.dataset.year;
@@ -2334,7 +2445,7 @@
                 const algorithmName = parts[1] || 'Unknown';
 
                 // 組合最終標題
-                title = `${algorithmName} Frontier in ${modelType} with Fund Level in ${monthName} ${year}`;
+                title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${monthName} ${year}`;
             }
             chartInstance = new Chart(ctx, {
                 type: 'scatter',
