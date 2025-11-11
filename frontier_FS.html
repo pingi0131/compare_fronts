@@ -634,6 +634,43 @@
             font-weight: bold;               /* 加粗 */
         }
 
+                /* Portfolio Index 顯示在 h3 右邊 */
+        .detail-header {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .detail-header h3 {
+            margin: 0;
+            text-align: center;
+            font-size: 40px;
+            font-weight: bold;
+            font-family: 'Times New Roman', serif;
+            color: #000;
+            flex: 1;
+        }
+
+        .index-badge {
+            position: absolute;
+            right: 10%;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            font-family: 'Times New Roman', serif;
+            background: #f0f0f0;
+            padding: 4px 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            white-space: nowrap;
+            z-index: 5;
+        }
+
         .fund-toggle-btn:hover {
             opacity: 0.8;
         }
@@ -752,6 +789,83 @@
             aspect-ratio: 1 / 1;  /* 保持正圓 */
         }
 
+        /* 導覽箭頭樣式 */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5%;
+            height: 8%;
+            border: none;
+            padding: 0;
+            background-color: transparent !important;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s ease;
+            outline: none;
+        }
+
+        /* 左箭頭 */
+        .nav-arrow.prev {
+            background-image: url('./png/left_arrow.png');
+            left: -3%;
+        }
+        .nav-arrow.prev:hover {
+            transform: translateY(-50%) translateX(-4px);
+        }
+        .nav-arrow.prev:hover::after {
+            content: "Previous Portfolio\A Lower Risk with Lower Return";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-10%);
+            font-size: 16px;
+            color: #000;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            white-space: pre;      /* 讓 \A 換行生效 */
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            z-index: 1000;
+            display: inline-block; /* 確保正確換行 */
+        }
+
+        /* 右箭頭 */
+        .nav-arrow.next {
+            background-image: url('./png/right_arrow.png');
+            right: -3%;
+        }
+        .nav-arrow.next:hover {
+            transform: translateY(-50%) translateX(4px);
+        }
+        .nav-arrow.next:hover::after {
+            content: "Next Portfolio\A Higher Return with Higher Risk";
+            position: absolute;
+            bottom: 100%;
+            right: 50%;
+            transform: translateX(10%);
+            font-size: 16px;
+            color: #000;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            white-space: pre;      /* 讓 \A 換行生效 */
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            z-index: 1000;
+            display: inline-block; /* 確保正確換行 */
+        }
+
+        .nav-arrow:active {
+            transform: translateY(-50%) scale(0.92) !important;
+        }
+
     </style>
 </head>
 
@@ -807,7 +921,10 @@
         <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
         <div id="detailPanel" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none; font-family: Arial; position: relative;">
             <button class="close-btn" onclick="hideDetailPanel()" title="關閉">×</button>
-            <h3>Portfolio Details</h3>
+            <div class="detail-header">
+                <h3>Portfolio Details</h3>
+                <div id="portfolioIndexDisplay" class="index-badge"></div>
+            </div>
             <div id="detailContent"></div>
         </div>
         <!-- 新增：股價顯示區塊 -->
@@ -1332,15 +1449,22 @@
                                                 folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
                             const color = '#FF0000';
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
+                            // 計算每個點的 TR = y / x (return/risk)
+                            const TrendRatio = parsed.map(p => p.y / p.x);
+                            const maxTR = Math.max(...TrendRatio);
+                            const bestIdx = TrendRatio.indexOf(maxTR);   // ← 最高 TR 的 index
 
                             datasetMap.set(fileName, {
                                 name: displayFolder,
                                 data: parsed.sort((a, b) => a.x - b.x),
                                 portfolioInfo,           // 關鍵：儲存每點的組合資訊
+                                bestTRIndex: bestIdx,        // 最高 TR 的 index
                                 color,
                                 simplifiedName: simplifiedFileName,
                                 pointRadius: 3
                             });
+
+                            //alert(`maxTR: ${maxTR}\n maxTR index: ${datasetMap.get(fileName).bestTRIndex}\nmaxTR index: ${bestIdx}`)
 
                             addFileEntryUI(fileName, color);
                         }
@@ -1839,7 +1963,7 @@
             document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
         }
 
-        async function showDetailPanel(point, info, datasetName) {
+        async function showDetailPanel(point, info, datasetName, dataEntry, currentIdx) {
             const panel = document.getElementById('detailPanel');
             const content = document.getElementById('detailContent');
 
@@ -1856,11 +1980,19 @@
                     return a.originalIndex - b.originalIndex;
                 });
 
-            // 生成唯一 ID
-            const pieChartId = `pieChart_${Date.now()}`;
-            const fundChartId = `fundChart_${Date.now()}`;
+            // 確保 currentIdx 有值
+            currentIdx = currentIdx ?? dataEntry.clickedIndex ?? 0;
+            const total = dataEntry.data.length;
 
-            // 更新面板內容（左右分欄，各佔50%）
+            // 取得前後 index
+            const prevIdx = currentIdx > 0 ? currentIdx - 1 : -1;
+            const nextIdx = currentIdx < dataEntry.data.length - 1 ? currentIdx + 1 : -1;
+
+            // 產生唯一 ID
+            const pieChartId = `pieChart_${Date.now()}_${currentIdx}`;
+            const fundChartId = `fundChart_${Date.now()}_${currentIdx}`;
+
+            // 更新面板內容（左右分欄，各自比例）
             content.innerHTML = `
                 <div style="
                     display: flex;
@@ -1869,6 +2001,12 @@
                     height: 100%;
                     min-height: 300px;      /* 避免太矮 */
                 ">
+                    <!-- 左箭頭 -->
+                    ${prevIdx !== -1 ? `<button class="nav-arrow prev"></button>` : ''}
+
+                    <!-- 右箭頭 -->
+                    ${nextIdx !== -1 ? `<button class="nav-arrow next"></button>` : ''}
+
                     <!-- 左側：資金水位區域 -->
                         <div style="flex: 5.5; min-width: 100px; display: flex; flex-direction: column;">
                             <!-- 標題 + 切換按鈕（共用一行） -->
@@ -2033,8 +2171,31 @@
                 });
             }
 
+            document.getElementById('portfolioIndexDisplay').textContent = `Index now: ${currentIdx} / ${total - 1}`;
+
             // 傳入 fundChartId 讓它同時畫折線圖 + 表格
             await drawFundLevelChartAndTable(fundChartId, info);
+            
+            // === 綁定箭頭事件 ===
+            const prevBtn = content.querySelector('.nav-arrow.prev');
+            const nextBtn = content.querySelector('.nav-arrow.next');
+
+            if (prevBtn) {
+                prevBtn.onclick = () => {
+                    dataEntry.clickedIndex = prevIdx;
+                    const p = dataEntry.data[prevIdx];
+                    const i = dataEntry.portfolioInfo[prevIdx];
+                    showDetailPanel(p, i, datasetName, dataEntry, prevIdx);
+                };
+            }
+            if (nextBtn) {
+                nextBtn.onclick = () => {
+                    dataEntry.clickedIndex = nextIdx;
+                    const p = dataEntry.data[nextIdx];
+                    const i = dataEntry.portfolioInfo[nextIdx];
+                    showDetailPanel(p, i, datasetName, dataEntry, nextIdx);
+                };
+            }
         }
 
         function hideDetailPanel() {
@@ -2449,7 +2610,7 @@
 
                         const element = elements[0];
                         const datasetIndex = element.datasetIndex;
-                        const dataIndex = element.index;
+                        const dataIndex = element.index;            // 目前點擊的portfolio 的 index
 
                         const fileName = Array.from(datasetMap.keys())[datasetIndex];
                         const dataEntry = datasetMap.get(fileName);
@@ -2463,8 +2624,12 @@
                         const point = dataEntry.data[dataIndex];
                         const info = dataEntry.portfolioInfo[dataIndex];
 
-                        // 顯示面板 + 彈出 alert
-                        showDetailPanel(point, info, dataEntry.name || fileName);
+                        //alert(`index now: ${dataIndex}`)
+                        // 更新點擊 index
+                        dataEntry.clickedIndex = dataIndex;
+
+                        // 呼叫新版 showDetailPanel
+                        showDetailPanel(point, info, dataEntry.name || fileName, dataEntry, dataIndex);
                     },
                     plugins: {
                         title: {
