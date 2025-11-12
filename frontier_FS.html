@@ -601,31 +601,47 @@
 
         #detailPanel .close-btn {
             position: absolute;
-            top: 8px;
-            right: 12px;
-            width: 28px;
-            height: 28px;
-            background: #fff;
-            border: 2px solid #ccc;
-            border-radius: 50%;
-            font-size: 18px;
-            font-weight: bold;
-            color: #aaa;
+            top: 2%;
+            right: 0;
+            width: 5%;
+            height: 5%;
+            background-image: url('./png/delete.png');
+            background-color: transparent !important;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             transition: all 0.2s ease;
             z-index: 10;
+            outline: none;
         }
+
+        /* hover 效果：可選擇讓圖片變暗或換另一張 hover 圖 */
         #detailPanel .close-btn:hover {
-            background: #f0f0f0;
-            color: #c00;
-            border-color: #c00;
+            content: "close";
+            transform: scale(1.1);
         }
+
+        #detailPanel .close-btn:hover::after {
+            content: "Close";
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            font-size: 24px;
+            color: #000;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            z-index: 11;            
+        }
+
         #detailPanel .close-btn:active {
             transform: scale(0.9);
         }
+
 
         #detailPanel h3 {
             text-align: center;              /* 文字水平置中 */
@@ -702,6 +718,7 @@
             text-align: center;
             width: fit-content;
             position: relative;
+            padding-left: 100px;
             z-index: 1;
         }
 
@@ -814,7 +831,8 @@
             left: -3%;
         }
         .nav-arrow.prev:hover {
-            transform: translateY(-50%) translateX(-4px);
+            /*transform: translateY(-50%) translateX(-4px);*/
+            transform: translateY(-50%) scale(1.05)
         }
         .nav-arrow.prev:hover::after {
             content: "Previous Portfolio\A Lower Risk with Lower Return";
@@ -834,6 +852,9 @@
             z-index: 1000;
             display: inline-block; /* 確保正確換行 */
         }
+        .nav-arrow.prev:active {
+            transform: translateY(-50%) translateX(-20%) scale(1.05);
+        }
 
         /* 右箭頭 */
         .nav-arrow.next {
@@ -841,7 +862,8 @@
             right: -3%;
         }
         .nav-arrow.next:hover {
-            transform: translateY(-50%) translateX(4px);
+            /*transform: translateY(-50%) translateX(4px);*/
+            transform: translateY(-50%) scale(1.05)
         }
         .nav-arrow.next:hover::after {
             content: "Next Portfolio\A Higher Return with Higher Risk";
@@ -861,10 +883,13 @@
             z-index: 1000;
             display: inline-block; /* 確保正確換行 */
         }
-
-        .nav-arrow:active {
-            transform: translateY(-50%) scale(0.92) !important;
+        .nav-arrow.next:active {
+            transform: translateY(-50%) translateX(20%) scale(1.05);
         }
+
+        /*.nav-arrow:active {
+            transform: translateY(-50%) scale(0.92) !important;
+        }*/
 
     </style>
 </head>
@@ -920,7 +945,7 @@
         </div>
         <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
         <div id="detailPanel" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none; font-family: Arial; position: relative;">
-            <button class="close-btn" onclick="hideDetailPanel()" title="關閉">×</button>
+            <button class="close-btn" onclick="hideDetailPanel()"></button>
             <div class="detail-header">
                 <h3>Portfolio Details</h3>
                 <div id="portfolioIndexDisplay" class="index-badge"></div>
@@ -2096,10 +2121,10 @@
                 // 根據數量動態調整字體大小
                 const itemCount = sortedStocks.length;
                 const fontSize = itemCount <= 5 ? 24 :
-                                 itemCount <= 10 ? 21 :
-                                 itemCount <= 15 ? 19 :
-                                 itemCount <= 20 ? 16 :
-                                 itemCount <= 25 ? 13 : 11
+                                 itemCount < 10 ? 20 :
+                                 itemCount < 15 ? 18 :
+                                 itemCount < 20 ? 14 :
+                                 itemCount < 25 ? 12 : 10
 
                 new Chart(ctx, {
                     type: 'pie',
@@ -2353,7 +2378,7 @@
                     backgroundColor: '#007BFF',
                     borderWidth: 3,
                     pointRadius: 0,
-                    pointHoverRadius: 6,
+                    pointHoverRadius: 5,
                     pointBackgroundColor: '#007BFF',
                     pointBorderColor: '#0069D9',
                     fill: false,
