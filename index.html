@@ -985,7 +985,7 @@
             minProfit: undefined,
             maxProfit: undefined
         };
-        const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid'];     // 設定優先排序的名稱，包括matrix和前緣顏色
+        const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid', 'H-MoQTS'];     // 設定優先排序的名稱，包括matrix和前緣顏色
 
         function filterDataByRange(dataMap, minRisk, maxRisk, minProfit, maxProfit) {
             const filteredMap = new Map();
@@ -1316,7 +1316,7 @@
             let csvFiles = [];
             if (dataSource === 'EPM_H-MoQTS') {
                 csvFiles = [
-                    `H-MoQTS/H-MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
+                    `H-MoQTS/H-MoQTS/M2M/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
                     `H-MoQTS/SMS-EMOA/NIKKEI30%26DJIA30_2015-2024_SMS-EMOA_3_999_100_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `H-MoQTS/MOEAD/NIKKEI30&DJIA30_2015-2024_MOEAD_3_999_100_10_10_10M_M2M_Pareto_Front_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `H-MoQTS/NSGA-II/NSGA_train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
@@ -1328,21 +1328,21 @@
                 ];
             } else if (dataSource === 'WPM_Hybird') {
                 csvFiles = [
-                    `WPM-Hybrid/Hybrid/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-Hybrid/Hybrid/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-Hybrid/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-Hybrid/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
                     `WPM-Hybrid/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                 ];
             } else if (dataSource === 'WPM_MoQTS') {
                 csvFiles = [
-                    `MoQTS/MoQTS/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
+                    `MoQTS/MoQTS/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`,
                     `MoQTS/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `MoQTS/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
                     `MoQTS/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                 ];
             } else if (dataSource === 'WPM_MoQA') {
                 csvFiles = [
-                    `WPM-MoQA/MoQA/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
+                    `WPM-MoQA/MoQA/M2M/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/SMS-EMOA/SMS-EMOA_M2M_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
                     `WPM-MoQA/NSGA-II/${year}${paddedMonth}_exp1_pareto.csv`,
                     `WPM-MoQA/MOEAD/MOEAD_fund_${year}_${paddedMonth}%28${year}%20Q1%29.csv`,
