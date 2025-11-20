@@ -30,9 +30,78 @@
             display: flex;
         }
 
+        /* 新的水平區間選擇器容器 */
+        .period-sidebar {
+            position: fixed;
+            top: 75px;
+            right: 0px;
+            width: 161px;                  /* 可依需求調整寬度 */
+            height: 46px;
+            background-color: #f0f0f0;
+            border-radius: 6px 0 0 6px;
+            border: solid #ccc;
+            border-width: 1px 0 1px 1px;
+            padding: 2px 4px;
+            z-index: 1002;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            font-family: 'Times New Roman', Times, serif;
+
+        }
+        .period-sidebar::-webkit-scrollbar {
+            display: none;
+        }
+        /*.period-sidebar::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+        .period-sidebar::-webkit-scrollbar-thumb {
+            background: #007BFF;
+            border-radius: 4px;
+        }
+        .period-sidebar::-webkit-scrollbar-thumb:hover {
+            background: #0056b3;
+        }*/
+
+        /* 每個區間按鈕樣式（模仿你的 .date-entry） */
+        .period-entry {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 42px;
+            padding: 4 8px;
+            margin-right: 5px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #000000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .period-entry:hover {
+            transform: scale(1.03);
+            background-color: #e0e0e0;
+            font-size: 28px;
+            width: 100px;
+        }
+        .period-entry.selected {
+            background-color: #cfcfcf;
+            color: white;
+        }
+        .period-entry:active {
+            transform: scale(0.95);
+        }
+
         .date-inputs {
             position: fixed;
-            top: 45px;
+            top: 44px;
             right: 0px;
             /* 與側邊欄觸發器對齊 */
             display: flex;
@@ -41,7 +110,7 @@
             background-color: #f0f0f0;
             /*padding: 6px;
             border: 1px solid #ccc;
-            /*border-radius: 4px;*/
+            */
             z-index: 1002;
             /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
             border-radius: 4px;
@@ -130,17 +199,15 @@
 
         /* Sidebar styles */
         .sidebar {
-            top: 80px;
+            top: 135px;
             width: 110px;
-            height: calc(100vh - 122px);
+            height: auto;
+            max-height: calc(100vh - 135px - 5vh);  /* 下方最少距離5%高度 */
             /* Adjust height to fit */
             overflow-y: auto;
             background-color: #f0f0f0;
-            border-top: 1px solid #ccc;
-            /* 添加上邊框 */
-            border-bottom: 1px solid #ccc;
-            /* 添加下邊框 */
-            border-left: 1px solid #ccc;
+            border: 1px solid #ccc;
+            border-width: 1px 0 1px 1px;
             padding: 10px;
             position: fixed;
             right: -110px;
@@ -174,6 +241,7 @@
             border-radius: 4px;
             margin-bottom: 4px;
             font-size: 20px;
+            font-family: 'Times New Roman', Times, serif;
             /* 默認字體大小 */
             text-align: center;
         }
@@ -628,7 +696,7 @@
         }
 
         .quick-view-title {
-            font-size: 24px;
+            font-size: 28px;
             font-family: 'Times New Roman', 'serif';
             font-weight: bold;
             color: #000000;
@@ -738,7 +806,7 @@
             font-weight: bold;               /* 加粗 */
         }
 
-                /* Portfolio Index 顯示在 h3 右邊 */
+        /* Portfolio Index 顯示在 h3 右邊 */
         .detail-header {
             position: relative;
             display: flex;
@@ -985,20 +1053,25 @@
 <body>
     <div class="data-source-container">
         <select id="dataSourceSelect">
-            <option value="WPM_Hybird" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
-                WPM Hybrid</option>
-            <option value="WPM_MoQTS" data-min-year="2021" data-min-month="12" data-max-year="2024" data-max-month="11">
-                WPM MoQTS</option>
-            <option value="WPM_MoQA" data-min-year="2021" data-min-month="12" data-max-year="2025" data-max-month="4">
-                WPM MoQA</option>
-            <option value="EPM_H-MoQTS" data-min-year="2023" data-min-month="1" data-max-year="2025" data-max-month="4">
-                EPM H-MoQTS</option>
+            <option value="EPM_H-MoQTS">EPM H-MoQTS</option>
+            <option value="WPM_Hybird">WPM Hybrid</option>
+            <option value="WPM_MoQTS">WPM MoQTS</option>
+            <option value="WPM_MoQA">WPM MoQA</option>
         </select>
+    </div>
+    <!-- 新增：水平區間選擇器（M2M / Q2Q / H2H / Y2Y） -->
+    <div class="period-sidebar" id="periodSidebar">
+        <div class="period-entry selected" data-period="M2M">M2M</div>
+        <div class="period-entry" data-period="Q2Q">Q2Q</div>
+        <div class="period-entry" data-period="H2H">H2H</div>
+        <div class="period-entry" data-period="Y2Y">Y2Y</div>
+        <!-- 未來想加 -->
+        <!-- <div class="period-entry" data-period="M*">M*</div> -->
     </div>
 
     <div class="date-inputs">
-        <input type="number" id="yearInput" placeholder="Year" min="2023" max="2025" step="1">
-        <input type="number" id="monthInput" placeholder="Month" min="1" max="12" step="1">
+        <input type="number" id="yearInput" placeholder="Year" min="2020" max="2025" step="1">
+        <input type="number" id="periodInput" placeholder="Month" min="1" max="12" step="1">
         <button id="loadDateBtn" class="reset-btn">✔️</button>
     </div>
     <div class="sidebar-trigger" id="sidebarTrigger"></div>
@@ -1058,28 +1131,68 @@
         let chartInstance = null;
         const datasetMap = new Map();
         const defaultColors = ['#0000FF', '#FFA500', '#888888', '#00AA00'];
-        let combinedFront = null;
         let initialRanges = {
             minRisk: undefined,
             maxRisk: undefined,
             minProfit: undefined,
             maxProfit: undefined
         };
-        const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid'];     // 設定優先排序的名稱，包括matrix和前緣顏色
+        const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid', 'H-MoQTS'];     // 設定優先排序的名稱，包括matrix和前緣顏色
 
-        const MARKET_GROUPS = {
+        const MARKET_GROUPS = {     // 設定演算法的投資市場
             DJIA:          ['WPM_MoQTS', 'WPM_Hybrid', 'WPM_MoQA'],
             NIKKEI:        [],
             NIKKEI_DJIA:   ['EPM_H-MoQTS'],
             DJIA_NIKKEI:   []
         };
 
+        // 建立 hash table，加速搜尋 O(1)
         const MARKET_MAP = Object.entries(MARKET_GROUPS).reduce((map, [market, algos]) => {
             algos.forEach(algo => {
                 map[algo] = market;
             });
             return map;
         }, {});
+
+        const periodRanges = {
+            WPM_Hybird:  { M2M: {minY:2021,minM:12, maxY:2025,maxM:4}},
+            WPM_MoQTS:   { M2M: {minY:2021,minM:12, maxY:2024,maxM:11}},
+            WPM_MoQA:    { M2M: {minY:2021,minM:12, maxY:2025,maxM:4}},
+            "EPM_H-MoQTS": { 
+                M2M: {minY:2023,minM:1, maxY:2025,maxM:4}, 
+                Q2Q: {minY:2020,minQ:1, maxY:2024,maxQ:3} 
+            }
+        };
+
+        const csvPortfolioPathMap = {
+            WPM_MoQTS: {
+                M2M: (year, month) => {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    return [`MoQTS/MoQTS/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`];
+                },
+            },
+            WPM_Hybird: {
+                M2M: (year, month) => {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    return [`WPM-Hybrid/Hybrid/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`];
+                },
+            },
+            WPM_MoQA: {
+                M2M: (year, month) => {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    return [`WPM-MoQA/MoQA/M2M/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`];
+                },
+            },
+            'EPM_H-MoQTS': {
+                M2M: (year, month) => {
+                    const paddedMonth = month.toString().padStart(2, '0');
+                    return [`H-MoQTS/H-MoQTS/M2M/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`];
+                },
+                Q2Q: (year, quarterLabel) => {
+                    return [`H-MoQTS/H-MoQTS/Q2Q/UA_NIKKEI30%26DJIA30_${year}_${quarterLabel}%28${year}%20Q1%29_60%23_front.csv`];
+                }
+            }
+        };
         
         function formatNum(num, fixed_length = 2) {
             const str = num.toFixed(fixed_length);
@@ -1117,56 +1230,104 @@
 
         // Generate date list
         function generateDateList() {
-            const dataSourceSelect = document.getElementById('dataSourceSelect');
-            const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-            const minYear = parseInt(selectedOption.dataset.minYear);
-            const maxYear = parseInt(selectedOption.dataset.maxYear);
-            const minMonth = parseInt(selectedOption.dataset.minMonth);
-            const maxMonth = parseInt(selectedOption.dataset.maxMonth);
+            const key = document.getElementById('dataSourceSelect').value;
+            const range = periodRanges[key];
+            if (!range) return [];  // 沒有設定這個 演算法 時回傳 []
+
+            let r;
+            if (currentPeriod === 'M2M') r = range.M2M;
+            else if (currentPeriod === 'Q2Q') r = range.Q2Q;
+            else if (currentPeriod === 'H2H') r = range.H2H;
+            else if (currentPeriod === 'Y2Y') r = range.Y2Y;
+            else r = null;
+
+            if (!r) return [];      // 沒有設定這個 period 時回傳 []
 
             const dates = [];
-
-            for (let year = maxYear; year >= minYear; year--) {
-
-                // Apply specific min/max only for minYear and maxYear
-                let maxMonthForYear = year === maxYear ? maxMonth : 12;
-                let minMonthForYear = year === minYear ? minMonth : 1;
-
-                for (let month = maxMonthForYear; month >= minMonthForYear; month--) {
-                    const paddedMonth = month.toString().padStart(2, '0');
-                    dates.push(`${year}_${paddedMonth}`);
+            if (currentPeriod === 'M2M') {
+                // M2M → YYYY_MM 格式
+                for (let y = r.maxY; y >= r.minY; y--) {
+                    const maxM = (y === r.maxY) ? r.maxM : 12;
+                    const minM = (y === r.minY) ? r.minM : 1;
+                    for (let m = maxM; m >= minM; m--) {
+                        dates.push(`${y}_${String(m).padStart(2,'0')}`);
+                    }
+                }
+            } else {
+                // Q2Q/H2H/Y2Y → YYYY_Qx 格式（Q1~Q4）
+                for (let y = r.maxY; y >= r.minY; y--) {
+                    const maxQ = (y === r.maxY) ? r.maxQ : 4;
+                    const minQ = (y === r.minY) ? r.minQ : 1;
+                    for (let q = maxQ; q >= minQ; q--) {
+                        dates.push(`${y}_Q${q}`);   // 2025_Q1
+                    }
                 }
             }
-
             return dates;
         }
 
         // Populate sidebar with date entries
         function populateDateSidebar() {
             const sidebar = document.getElementById('dateSidebar');
+            sidebar.innerHTML = '';
+            document.getElementById('yearInput').value = '';
+            document.getElementById('periodInput').value = '';
+            document.getElementById('chart-container').style.display = 'none';
+            hideDetailPanel();
             const dates = generateDateList();
-            sidebar.innerHTML = ''; // Clear existing entries
+
+            if (dates.length === 0) {
+                // ── 沒有資料時顯示「No Data」──
+                const noDataDiv = document.createElement('div');
+                noDataDiv.className = 'date-entry';
+                noDataDiv.textContent = 'No Data';
+                noDataDiv.style.cssText = `
+                    background-color: #f5f5f5 !important;
+                    color: #000 !important;
+                    cursor: not-allowed !important;
+                    opacity: 1;
+                    pointer-events: none;   /* 完全不能點 */
+                    font-style: italic;
+                    /* font-family: 'Times New Roman', Times, serif; */
+                    font-size: 26px;
+                    /* border: 1px dashed #ccc; */
+                `;
+                noDataDiv.title = '此演算法在此區間無資料';
+                sidebar.appendChild(noDataDiv);
+                return; // 直接結束
+            }
+
             dates.forEach(date => {
-                const [year, month] = date.split('_');
-                const entry = document.createElement('div');
-                entry.className = 'date-entry';
-                entry.textContent = date;
-                entry.dataset.year = year;
-                entry.dataset.month = month;
-                entry.addEventListener('click', () => {
-                    // Remove 'selected' class from all entries
-                    sidebar.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
-                    // Add 'selected' class to clicked entry
-                    entry.classList.add('selected');
-                    // Update date input fields
-                    const yearInput = document.getElementById('yearInput');
-                    const monthInput = document.getElementById('monthInput');
-                    yearInput.value = year;
-                    monthInput.value = parseInt(month, 10); // Remove leading zero for display
-                    // Load files for the selected date
-                    loadFilesFromDataDir(year, month);
+                const div = document.createElement('div');
+                div.className = 'date-entry';
+
+                div.textContent = date;
+
+                div.addEventListener('click', () => {
+                    document.querySelectorAll('.date-entry').forEach(e => e.classList.remove('selected'));
+                    div.classList.add('selected');
+
+                    const [year, rest] = date.split('_');
+                    //alert(`${year} ${rest}`)
+                    document.getElementById('yearInput').value = year;
+                    const periodInput = document.getElementById('periodInput');
+
+                    // 存真正的 key（用於後續 loadFilesFromDataDir）
+                    div.dataset.key = date;  // 例如：2025_04 或 2025_Q1
+                    div.dataset.year = year;
+                    div.dataset.period = rest;
+
+                    if (currentPeriod === 'M2M') {
+                        periodInput.value = parseInt(rest);
+                    } else {
+                        // 季資料時，periodInput 顯示 Q1~Q4
+                        const quarterNum = rest.replace('Q', '');  // "Q1" → "1"
+                        periodInput.value = quarterNum;
+                    }
+
+                    loadFilesFromDataDir(year, rest); // rest 可能是 04 或 Q1
                 });
-                sidebar.appendChild(entry);
+                sidebar.appendChild(div);
             });
         }
 
@@ -1210,6 +1371,8 @@
                 document.getElementById('metricsTableContainer').style.display = 'none';
                 document.getElementById('showTableBtn').style.display = 'none';
                 document.getElementById('resetColorsBtn').style.display = 'none';
+                document.getElementById('yearInput').value = '';
+                document.getElementById('periodInput').value = '';
 
                 if (chartInstance) {
                     chartInstance.destroy();
@@ -1218,7 +1381,7 @@
 
                 // 更新輸入框的限制條件
                 const yearInput = document.getElementById('yearInput');
-                const monthInput = document.getElementById('monthInput');
+                const periodInput = document.getElementById('periodInput');
                 const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
                 const minYear = parseInt(selectedOption.dataset.minYear);
                 const maxYear = parseInt(selectedOption.dataset.maxYear);
@@ -1227,13 +1390,13 @@
 
                 // 重置輸入框為空或預設值
                 yearInput.value = '';
-                monthInput.value = '';
+                periodInput.value = '';
 
                 // 更新年份和月份的限制
                 yearInput.min = minYear;
                 yearInput.max = maxYear;
-                monthInput.min = minMonth;
-                monthInput.max = maxMonth;
+                periodInput.min = minMonth;
+                periodInput.max = maxMonth;
 
                 // 清空側邊欄的選中狀態
                 const sidebar = document.getElementById('dateSidebar');
@@ -1272,7 +1435,7 @@
         // 初始化輸入框事件監聽器
         function initializeDateInputs() {
             const yearInput = document.getElementById('yearInput');
-            const monthInput = document.getElementById('monthInput');
+            const periodInput = document.getElementById('periodInput');
             const loadDateBtn = document.getElementById('loadDateBtn');
             const dataSourceSelect = document.getElementById('dataSourceSelect');
 
@@ -1293,16 +1456,16 @@
                 let minMonthForYear = year === minYear ? minMonth : 1;
                 let maxMonthForYear = year === maxYear ? maxMonth : 12;
 
-                monthInput.min = minMonthForYear;
-                monthInput.max = maxMonthForYear;
+                periodInput.min = minMonthForYear;
+                periodInput.max = maxMonthForYear;
 
                 // Adjust month input if out of range
-                const currentMonth = parseInt(monthInput.value);
+                const currentMonth = parseInt(periodInput.value);
                 if (currentMonth < minMonthForYear) {
-                    monthInput.value = minMonthForYear;
+                    periodInput.value = minMonthForYear;
                 }
                 else if (currentMonth > maxMonthForYear) {
-                    monthInput.value = maxMonthForYear;
+                    periodInput.value = maxMonthForYear;
                 }
             }
 
@@ -1316,7 +1479,7 @@
             // 點擊「載入」按鈕時觸發
             loadDateBtn.addEventListener('click', () => {
                 let year = yearInput.value.trim();
-                let month = monthInput.value.trim().padStart(2, '0');
+                let month = periodInput.value.trim().padStart(2, '0');
 
                 // 如果沒有輸入，預設為最大年份和最大月份
                 if (!year && (!month || month === '00')) {
@@ -1325,7 +1488,7 @@
                     const maxMonth = selectedOption.dataset.maxMonth;
                     month = maxMonth.padStart(2, '0');
                     yearInput.value = year;
-                    monthInput.value = parseInt(maxMonth);
+                    periodInput.value = parseInt(maxMonth);
                 }
 
                 if (validateDate(year, month)) {
@@ -1342,11 +1505,11 @@
             });
 
             // 按下 Enter 鍵時觸發
-            [yearInput, monthInput].forEach(input => {
+            [yearInput, periodInput].forEach(input => {
                 input.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         let year = yearInput.value.trim();
-                        let month = monthInput.value.trim().padStart(2, '0');
+                        let month = periodInput.value.trim().padStart(2, '0');
 
                         // 如果沒有輸入，預設為最大年份和最大月份
                         if (!year && (!month || month === '00')) {
@@ -1355,7 +1518,7 @@
                             const maxMonth = selectedOption.dataset.maxMonth;
                             month = maxMonth.padStart(2, '0');
                             yearInput.value = year;
-                            monthInput.value = parseInt(maxMonth);
+                            periodInput.value = parseInt(maxMonth);
                         }
 
                         if (validateDate(year, month)) {
@@ -1410,6 +1573,36 @@
                 }
             });
         }
+
+        let currentPeriod = 'M2M';  // 預設值
+
+        // 初始化水平區間選擇器
+        document.addEventListener('DOMContentLoaded', () => {
+            const dataSourceSelect = document.getElementById('dataSourceSelect');
+            const periodEntries = document.querySelectorAll('#periodSidebar .period-entry');
+
+            dataSourceSelect.addEventListener('change', populateDateSidebar);
+
+            periodEntries.forEach(entry => {
+                entry.addEventListener('click', function() {
+                    periodEntries.forEach(e => e.classList.remove('selected'));
+                    this.classList.add('selected');
+                    currentPeriod = this.dataset.period; // M2M / Q2Q / H2H / Y2Y
+                    populateDateSidebar();
+                    document.getElementById('chart-container').style.display = 'none';
+                    document.getElementById('yearInput').value = '';
+                    document.getElementById('periodInput').value = '';
+                    hideDetailPanel();
+                });
+            });
+            // 支援滑鼠滾輪水平滾動（很多使用者習慣垂直滾輪）
+            periodSidebar.addEventListener('wheel', function(e) {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    this.scrollLeft += e.deltaY * 0.6;  // 垂直滾輪變成水平滾動
+                }
+            });
+        });
 
         function parsePortfolioString(str, count) {
             if (!str) return [];
@@ -1483,27 +1676,17 @@
                 return;
             }
             const dataSource = document.getElementById('dataSourceSelect').value;
-            const paddedMonth = month.padStart(2, '0');
-            const pattern = `${year}_${paddedMonth}`;
+            let paddedMonth = month;
+            if (currentPeriod === 'M2M') paddedMonth = month.padStart(2, '0');
+            // 關鍵：使用 currentPeriod 來決定資料夾
+            const periodFolder = currentPeriod;   // M2M / Q2Q / H2H / Y2Y
             let csvFiles = [];
 
             // 依資料來源決定要載入的檔案
-            if (dataSource === 'WPM_MoQTS') {
-                csvFiles = [
-                    `MoQTS/MoQTS/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`
-                ];
-            } else if (dataSource === 'WPM_Hybird') {
-                csvFiles = [
-                    `WPM-Hybrid/Hybrid/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
-                ];
-            } else if (dataSource === 'WPM_MoQA') {
-                csvFiles = [
-                    `WPM-MoQA/MoQA/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`
-                ];
-            } else if (dataSource === 'EPM_H-MoQTS') {
-                csvFiles = [
-                    `H-MoQTS/H-MoQTS/UA_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`,
-                ];
+            const generator = csvPortfolioPathMap[dataSource]?.[currentPeriod];
+
+            if (generator) {
+                csvFiles = generator(year, month); // month 可以在 Q2Q 不需要時忽略
             } else {
                 alert('只顯示我們的方法 WPM_MoQTS, WPM_Hybird, WPM_MoQA');
                 return;
@@ -2293,7 +2476,7 @@
             document.getElementById('portfolioIndexDisplay').textContent = `Index now: ${currentIdx + 1} / ${total}`;
 
             // 傳入 fundChartId 讓它同時畫折線圖 + 表格
-            await drawFundLevelChartAndTable(fundChartId, info);
+            await drawFundLevelChartAndTable(fundChartId, info, sortedStocks);
             
             // === 綁定箭頭事件 ===
             const prevBtn = content.querySelector('.nav-arrow.prev');
@@ -2380,10 +2563,11 @@
             return fs;
         }
 
-        async function drawFundLevelChartAndTable(chartId, portfolioInfo) {
+        async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) {
             const fundLevelTableSection = document.getElementById('fundLevelTableSection');
             const year = document.getElementById('yearInput').value;
-            const month = document.getElementById('monthInput').value.padStart(2, '0');
+            let month = document.getElementById('periodInput').value;
+            if (currentPeriod === 'M2M') month = month.padStart(2, '0');
             const dataSource = document.getElementById('dataSourceSelect').value;
             const currentMarket = MARKET_MAP[dataSource] || 'DJIA';
 
@@ -2393,7 +2577,12 @@
             }
 
             try {
-                const url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+                let url;
+                if (currentPeriod === 'M2M')
+                    url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+                else if (currentPeriod === 'Q2Q')
+                    url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${month}%28${year}%20Q1%29.csv`;
+                //alert(`${url}`)
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const text = await response.text();
@@ -2409,20 +2598,28 @@
                 // === 1. 計算實際投資組合資金水位 ===
                 const portfolioFS = calculateFundLevel(stockPriceData, portfolioInfo);
 
-                // === 2. 為每檔股票計算 100% 投入的資金水位 ===
+                // === 2. 為每檔股票計算 100% 投入的資金水位（依 sortedStocks 順序）===
                 const singleStockFS = {};
                 const stockIndices = {}; // 股票代碼 → 欄位索引
 
+                // 先建立 stock → index 對應表
                 headers.forEach((stock, idx) => {
-                    if (portfolioInfo.stocks.some(s => s.name === stock)) {
-                        stockIndices[stock] = idx;
-                    }
+                    stockIndices[stock] = idx;
                 });
 
-                // 為每檔在 portfolio 中的股票計算 100% 投入
-                Object.keys(stockIndices).forEach(stock => {
+                // 使用傳入的 sortedStocks 來決定順序與計算
+                sortedStocks.forEach(stockObj => {
+                    const stock = stockObj.name;
                     const idx = stockIndices[stock];
+                    if (idx === undefined) return; // 防呆
+
                     const fs = [initFund]; // 第0天為初始資金
+                    const buyPrice = parseFloat(priceRows[0][idx]); // 買入當日價格
+                    if (isNaN(buyPrice) || buyPrice <= 0) {
+                        singleStockFS[stock] = Array(priceRows.length + 1).fill(initFund);
+                        return;
+                    }
+                    const shares = Math.floor(initFund / buyPrice);
 
                     for (let day = 0; day < priceRows.length; day++) {
                         const price = parseFloat(priceRows[day][idx]);
@@ -2430,7 +2627,6 @@
                             fs.push(fs[fs.length - 1]);
                             continue;
                         }
-                        const shares = Math.floor(initFund / parseFloat(priceRows[0][idx])); // 買入時價格
                         const value = shares * price;
                         fs.push(value);
                     }
@@ -2446,9 +2642,11 @@
                 const portfolioGain = portfolioData.map(f => ((f - initFund) / initFund * 100).toFixed(2));
 
                 // 單股資料集
-                const singleStockDatasets = Object.entries(singleStockFS).map(([stock, fs], i) => {
+                const singleStockDatasets = sortedStocks.map((stockObj, i) => {
+                    const stock = stockObj.name;
+                    const fs = singleStockFS[stock] || Array(priceRows.length + 1).fill(initFund);
                     const data = fs.slice(1);
-                    const hue = (i * 360 / Object.keys(singleStockFS).length) % 360;
+                    const hue = (i * 360 / sortedStocks.length) % 360;
                     const color = `hsl(${hue}, 70%, 90%)`;
                     return {
                         label: `${stock}`,
@@ -2459,7 +2657,6 @@
                         pointRadius: 0,
                         fill: false,
                         tension: 0.1,
-                        //borderDash: [3, 3],
                         yAxisID: 'y'
                     };
                 });
@@ -2503,8 +2700,9 @@
                         scales: {
                             x: {
                                 ticks: {
-                                    font: { family: " 'Times New Roman', serif", size: 20, weight: 'bold' },
+                                    font: { family: " 'Times New Roman', serif", size: 22, weight: 'bold' },
                                     color: '#000',
+                                    maxTicksLimit: 25,
                                 },
                                 title: {
                                     display: true,
@@ -2646,7 +2844,6 @@
         function drawChart() {
             const ctx = document.getElementById('riskProfitChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
-            combinedFront = datasetMap.size >= 2 ? combineNonDominatedSets(datasetMap) : null;
             const datasets = Array.from(datasetMap.entries()).map(([fileName, { data, color, name, pointRadius }]) => ({
                 label: name || fileName,
                 data: data,
@@ -2659,29 +2856,7 @@
                 tension: 0,
                 dragData: false
             }));
-            if (combinedFront && combinedFront.risk.length > 0) {
-                const combinedData = [];
-                for (let i = 0; i < combinedFront.risk.length; i++) {
-                    combinedData.push({
-                        x: combinedFront.risk[i],
-                        y: combinedFront.profit[i]
-                    });
-                }
-                datasets.push({
-                    label: 'Combined Front',
-                    data: combinedData,
-                    backgroundColor: '#000000',
-                    borderColor: '#000000',
-                    pointRadius: 1,
-                    hoverRadius: 2, // 確保懸停時點大小不變
-                    showLine: true,
-                    fill: false,
-                    tension: 0,
-                    borderWidth: 1,
-                    borderDash: [5, 5],
-                    dragData: false
-                });
-            }
+            
             const minX = parseFloat(minRiskInput.value);
             const maxX = parseFloat(maxRiskInput.value);
             const minY = parseFloat(minProfitInput.value);
@@ -2698,9 +2873,14 @@
 
             if (selectedDate) {
                 const year = selectedDate.dataset.year;
-                const month = selectedDate.dataset.month;
+                const period = selectedDate.dataset.period;
+                //alert(`${year} ${period}`)
                 const monthNames = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
-                const monthName = monthNames[parseInt(month, 10) - 1] || 'Unknown';
+                let periodName;
+                if (currentPeriod === 'M2M')
+                    periodName = monthNames[parseInt(period, 10) - 1] || 'Unknown';
+                else if (currentPeriod === 'Q2Q')
+                    periodName = period || 'Unknown';
 
                 // 取得目前選擇的 dataSource
                 const dataSourceSelect = document.getElementById('dataSourceSelect');
@@ -2712,7 +2892,7 @@
                 const algorithmName = parts[1] || 'Unknown';
 
                 // 組合最終標題
-                title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${monthName} ${year}`;
+                title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${periodName} ${year}`;
             }
             chartInstance = new Chart(ctx, {
                 type: 'scatter',
