@@ -28,6 +28,11 @@
             font-family: '標楷體', 'Times New Roman', serif;
             padding: 28px;
             display: flex;
+            /*background-image: url("./png/FED.jpg");*/
+            background-size: cover;         /* 填滿整個畫面 */
+            background-position: center;    /* 讓圖片保持比例並置中 */
+            background-attachment: fixed;   /* 固定背景不滾動（可選） */
+            background-repeat: no-repeat;   /* 不重複圖片 */
         }
 
         /* 新的水平區間選擇器容器 */
@@ -315,13 +320,22 @@
             width: calc(100% - 20px);
         }
 
+        #chart-wrapper {
+            position: relative;
+            display: none;  /* 初始隱藏，當有資料時才顯示 */
+            width: 80%;  /* 根據內容調整寬度 */
+            margin: 20px auto 0;  /* 整體置中 */
+            padding-right: 5%;  /* 為右側按鈕群組預留空間 */
+            background-color: #fff;
+        }
+
         #chart-container {
             position: relative;
             width: 100%;
-            max-width: 960px;
+            max-width: 85%;
             aspect-ratio: 16 / 10;
-            margin: 20px auto 0;
-            display: none;
+            display: block;
+            /* 移除 margin，因為外層容器會處理 */
         }
 
         canvas {
@@ -332,6 +346,7 @@
         h1 {
             margin-top: 0px;
             margin-bottom: 20px;
+            font-family: '標楷體', 'Times New Roman', Times, serif;
         }
 
         .controls,
@@ -672,15 +687,16 @@
         .quick-buttons-wrapper {
             position: absolute;
             top: 50%;
-            left: 100%;                       /* 從圖表右邊開始 */
+            left: 80%;                       /* 從圖表右邊開始 */
             transform: translateY(-50%);
-            margin-left: 8%;                /* 與圖表間距 */
+            margin-left: 5%;                /* 與圖表間距 */
             display: flex;
             flex-direction: column;
             align-items: center;              /* 水平置中（內部內容） */
             justify-content: center;          /* 垂直置中（若內容少） */
 
             /* 外框尺寸 > 內容 */
+            width: 18%;     /* 20vh */
             min-width: 190px;                 /* 比按鈕寬 */
             padding: 22px 20px;               /* 上下左右內距 → 高度更大 */
             gap: 14px;                        /* 標題與按鈕間距 */
@@ -689,7 +705,7 @@
             background: rgba(255, 255, 255, 0.98);
             border: 3px solid #b24ae2;        /* 粗邊框 */
             border-radius: 16px;              /* 大圓角 */
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.22);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 
             z-index: 10;
             font-family: 'Times New Roman', serif;
@@ -753,6 +769,17 @@
         }
         #btn-lowest-risk:hover {
             background: linear-gradient(135deg, #4C6CEB, #3350C7);
+        }
+
+        #detailPanel {
+            margin-top: 20px;
+            padding: 15px;
+            /*border: 1px solid #ccc;*/
+            border-radius: 20px;
+            display: none;
+            font-family: 'Times New Roman', Times, serif;
+            position: relative;
+            box-shadow: 0 4px 20px rgb(204, 204, 204);
         }
 
         #detailPanel .close-btn {
@@ -1059,13 +1086,11 @@
             <option value="WPM_MoQA">WPM MoQA</option>
         </select>
     </div>
-    <!-- 新增：水平區間選擇器（M2M / Q2Q / H2H / Y2Y） -->
     <div class="period-sidebar" id="periodSidebar">
         <div class="period-entry selected" data-period="M2M">M2M</div>
         <div class="period-entry" data-period="Q2Q">Q2Q</div>
         <div class="period-entry" data-period="H2H">H2H</div>
         <div class="period-entry" data-period="Y2Y">Y2Y</div>
-        <!-- 未來想加 -->
         <!-- <div class="period-entry" data-period="M*">M*</div> -->
     </div>
 
@@ -1079,7 +1104,7 @@
         <!-- Date entries will be populated by JavaScript -->
     </div>
     <div class="main-content">
-        <h1>前緣詳細資料 投資組合 資金水位
+        <h1>前緣詳細資料 投資組合&資金水位
         </h1>
 
         <div class="range-controls">
@@ -1089,20 +1114,23 @@
             <span class="tilde">-</span>
             <input type="number" id="maxRisk" placeholder="Max" step="1">
             <button class="reset-range-btn" onclick="resetField('maxRisk')"></button>
-              
+            
             <label>\( f_2(x) \)</label>
             <input type="number" id="minProfit" placeholder="Min" step="1">
             <button class="reset-range-btn" onclick="resetField('minProfit')"></button>
             <span class="tilde">-</span>
             <input type="number" id="maxProfit" placeholder="Max" step="1">
             <button class="reset-range-btn" onclick="resetField('maxProfit')"></button>
-              
+            
             <button class="reset-btn" onclick="resetAllRanges()">All</button>
         </div>
+        <hr style="margin: 20px 0; border: 1px solid #ccc;">
         <div id="fileListContainer" class="controls"></div>
-        <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
-        <div id="chart-container">
-            <canvas id="riskProfitChart"></canvas>
+        <!-- <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button> -->
+        <div id="chart-wrapper">
+            <div id="chart-container">
+                <canvas id="riskProfitChart"></canvas>
+            </div>
             <div id="quick-action-buttons" class="quick-buttons-wrapper">
                 <div class="quick-view-title">Quick View</div>
                 <button class="quick-btn" id="btn-highest-return">Highest Return</button>
@@ -1110,8 +1138,7 @@
                 <button class="quick-btn" id="btn-lowest-risk">Lowest Risk</button>
             </div>
         </div>
-        <div id="metricsOutput" class="metrics-results" style="display: none;"></div>
-        <div id="detailPanel" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none; font-family: Arial; position: relative;">
+        <div id="detailPanel">
             <button class="close-btn" onclick="hideDetailPanel()"></button>
             <div class="detail-header">
                 <h3>Portfolio Details</h3>
@@ -1119,7 +1146,7 @@
             </div>
             <div id="detailContent"></div>
         </div>
-        <!-- 新增：股價顯示區塊 -->
+        <!-- 股價顯示區塊 -->
         <div id="stockPriceContainer">
             <h3></h3>
             <div id="stockPriceError"></div>
@@ -1138,7 +1165,8 @@
             maxProfit: undefined
         };
         const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid', 'H-MoQTS'];     // 設定優先排序的名稱，包括matrix和前緣顏色
-
+        let modalCounter = 0;
+        
         const MARKET_GROUPS = {     // 設定演算法的投資市場
             DJIA:          ['WPM_MoQTS', 'WPM_Hybrid', 'WPM_MoQA'],
             NIKKEI:        [],
@@ -1272,7 +1300,9 @@
             sidebar.innerHTML = '';
             document.getElementById('yearInput').value = '';
             document.getElementById('periodInput').value = '';
+            document.getElementById('chart-wrapper').style.display = 'none';
             document.getElementById('chart-container').style.display = 'none';
+            document.getElementById('fileListContainer').innerHTML = '';
             hideDetailPanel();
             const dates = generateDateList();
 
@@ -1366,7 +1396,7 @@
                 // 清空圖表和相關 UI 元素
                 datasetMap.clear();
                 document.getElementById('fileListContainer').innerHTML = '';
-                document.getElementById('chart-container').style.display = 'none';
+                document.getElementById('chart-wrapper').style.display = 'none';
                 document.getElementById('metricsOutput').style.display = 'none';
                 document.getElementById('metricsTableContainer').style.display = 'none';
                 document.getElementById('showTableBtn').style.display = 'none';
@@ -1671,6 +1701,8 @@
         // Modified loadFilesFromDataDir to accept year and month parameters
         async function loadFilesFromDataDir(year, month) {
             hideDetailPanel();
+            document.getElementById('chart-wrapper').style.display = 'none';
+            document.getElementById('fileListContainer').innerHTML = '';
             if (!year || !month) {
                 alert('請選擇一個日期');
                 return;
@@ -1747,8 +1779,9 @@
                         if (parsed.length > 0) {
                             const fileName = filePath.split('/').pop();
                             const folder = filePath.split('/')[1];
-                            const displayFolder = folder.includes('MoQTS') ? 'MoQTS' :
-                                                folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
+                            //const displayFolder = folder.includes('MoQTS') ? 'MoQTS' :
+                            //                    folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
+                            const displayFolder = folder;
                             const color = '#FF0000';
                             const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
                             // 計算每個點的 TR = y / x (return/risk)
@@ -1777,7 +1810,7 @@
 
                 if (datasetMap.size > 0) {
                     drawChart();
-                    document.getElementById('resetColorsBtn').style.display = 'inline-block';
+                    //document.getElementById('resetColorsBtn').style.display = 'inline-block';
                 } else {
                     alert(`沒有成功載入任何有效 CSV 檔案`);
                 }
@@ -1902,8 +1935,6 @@
         }
         
         document.getElementById('showTableBtn').addEventListener('click', generateMetricsTable);
-
-        let modalCounter = 0;
 
         function addFileEntryUI(fileName, defaultColor) {
             const container = document.getElementById('fileListContainer');
@@ -2249,20 +2280,20 @@
                 }
             });
 
-            const delBtn = document.createElement('button');
+            /*const delBtn = document.createElement('button');
             delBtn.textContent = '刪除';
             delBtn.onclick = () => {
                 datasetMap.delete(fileName);
                 entry.remove();
                 drawChart();
-            };
+            };*/
 
             entry.appendChild(colorPreview);
             entry.appendChild(nameInput);
             entry.appendChild(document.createTextNode(datasetMap.get(fileName).simplifiedName));
-            entry.appendChild(delBtn);
+            //entry.appendChild(delBtn);
             container.appendChild(entry);
-            document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+            //document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
         }
 
         async function showDetailPanel(point, info, datasetName, dataEntry, currentIdx) {
@@ -2392,7 +2423,8 @@
                 // 生成顏色（使用色相環均勻分布）
                 const colors = sortedStocks.map((_, i) => {
                     const hue = (i * 360 / sortedStocks.length) % 360;
-                    return `hsl(${hue}, 80%, 50%)`;
+                    //return `hsl(${hue}, 80%, 50%)`;
+                    return `hsl(${hue}, 90%, 50%)`;
                 });
 
                 // 根據數量動態調整字體大小
@@ -2647,7 +2679,8 @@
                     const fs = singleStockFS[stock] || Array(priceRows.length + 1).fill(initFund);
                     const data = fs.slice(1);
                     const hue = (i * 360 / sortedStocks.length) % 360;
-                    const color = `hsl(${hue}, 70%, 90%)`;
+                    //const color = `hsl(${hue}, 70%, 90%)`;
+                    const color = `hsl(${hue}, 80%, 90%)`;
                     return {
                         label: `${stock}`,
                         data: data,
@@ -3087,11 +3120,11 @@
                 }
             });
             document.getElementById('chart-container').style.display = 'block';
-            document.getElementById('chart-container').style.margin = '20px auto';
+            document.getElementById('chart-wrapper').style.display = 'block';
             document.getElementById('chart-container').addEventListener('dblclick', function () {
                 chartInstance.resetZoom();
             });
-            document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+            //document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
 
             // === 新增：快速按鈕事件綁定 ===
             const btnHighestReturn = document.getElementById('btn-highest-return');
