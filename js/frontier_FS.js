@@ -37,26 +37,26 @@ const periodRanges = {
 
 const csvPortfolioPathMap = {
     WPM_MoQTS: {
-        M2M: (year, month) => {
-            const paddedMonth = month.toString().padStart(2, '0');
+        M2M: (year, period) => {
+            const paddedMonth = period.toString().padStart(2, '0');
             return [`MoQTS/MoQTS/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29_50_front.csv`];
         },
     },
     WPM_Hybird: {
-        M2M: (year, month) => {
-            const paddedMonth = month.toString().padStart(2, '0');
+        M2M: (year, period) => {
+            const paddedMonth = period.toString().padStart(2, '0');
             return [`WPM-Hybrid/Hybrid/M2M/train_${year}_${paddedMonth}%28${year}%20Q1%29.csv`];
         },
     },
     WPM_MoQA: {
-        M2M: (year, month) => {
-            const paddedMonth = month.toString().padStart(2, '0');
+        M2M: (year, period) => {
+            const paddedMonth = period.toString().padStart(2, '0');
             return [`WPM-MoQA/MoQA/M2M/before_${year}_${paddedMonth}%28${year}%20Q1%29.csv`];
         },
     },
     'EPM_H-MoQTS': {
-        M2M: (year, month) => {
-            const paddedMonth = month.toString().padStart(2, '0');
+        M2M: (year, period) => {
+            const paddedMonth = period.toString().padStart(2, '0');
             return [`H-MoQTS/H-MoQTS/M2M/UA_NIKKEI30%26DJIA30_${year}_${paddedMonth}%28${year}%20Q1%29_60%23_front.csv`];
         },
         Q2Q: (year, quarterLabel) => {
@@ -237,7 +237,6 @@ function initializeDataSourceSelect() {
         datasetMap.clear();
         document.getElementById('fileListContainer').innerHTML = '';
         document.getElementById('chart-wrapper').style.display = 'none';
-        document.getElementById('resetColorsBtn').style.display = 'none';
         document.getElementById('yearInput').value = '';
         document.getElementById('periodInput').value = '';
 
@@ -246,24 +245,29 @@ function initializeDataSourceSelect() {
             chartInstance = null;
         }
 
+        const range = getCurrentRange();
+
         // 更新輸入框的限制條件
         const yearInput = document.getElementById('yearInput');
         const periodInput = document.getElementById('periodInput');
-        const selectedOption = dataSourceSelect.options[dataSourceSelect.selectedIndex];
-        const minYear = parseInt(selectedOption.dataset.minYear);
-        const maxYear = parseInt(selectedOption.dataset.maxYear);
-        const minMonth = parseInt(selectedOption.dataset.minMonth);
-        const maxMonth = parseInt(selectedOption.dataset.maxMonth);
 
         // 重置輸入框為空或預設值
         yearInput.value = '';
         periodInput.value = '';
 
         // 更新年份和月份的限制
-        yearInput.min = minYear;
-        yearInput.max = maxYear;
-        periodInput.min = minMonth;
-        periodInput.max = maxMonth;
+        yearInput.min = range.minY;
+        yearInput.max = range.maxY;
+
+        const year = parseInt(yearInput.value) || range.maxY;
+        const isMinYear = year === range.minY;
+        const isMaxYear = year === range.maxY;
+
+        const minP = isMinYear ? (range.minM ?? range.minQ ?? 1) : 1;
+        const maxP = isMaxYear ? (range.maxM ?? range.maxQ ?? 12) : (currentPeriod === 'Q2Q' ? 4 : 12);
+
+        periodInput.min = minP;
+        periodInput.max = maxP;
 
         // 清空側邊欄的選中狀態
         const sidebar = document.getElementById('dateSidebar');
@@ -514,17 +518,17 @@ function parsePortfolioString(str, count) {
 }
 
 // Modified loadFilesFromDataDir to accept year and month parameters
-async function loadFilesFromDataDir(year, month) {
+async function loadFilesFromDataDir(year, period) {
     hideDetailPanel();
     document.getElementById('chart-wrapper').style.display = 'none';
     document.getElementById('fileListContainer').innerHTML = '';
-    if (!year || !month) {
+    if (!year || !period) {
         alert('請選擇一個日期');
         return;
     }
     const dataSource = document.getElementById('dataSourceSelect').value;
-    let paddedMonth = month;
-    if (currentPeriod === 'M2M') paddedMonth = month.padStart(2, '0');
+    let paddedMonth = period;
+    if (currentPeriod === 'M2M') paddedMonth = period.padStart(2, '0');
     // 關鍵：使用 currentPeriod 來決定資料夾
     const periodFolder = currentPeriod;   // M2M / Q2Q / H2H / Y2Y
     let csvFiles = [];
@@ -533,7 +537,7 @@ async function loadFilesFromDataDir(year, month) {
     const generator = csvPortfolioPathMap[dataSource]?.[currentPeriod];
 
     if (generator) {
-        csvFiles = generator(year, month); // month 可以在 Q2Q 不需要時忽略
+        csvFiles = generator(year, period); // month 可以在 Q2Q 不需要時忽略
     } else {
         alert('只顯示我們的方法 WPM_MoQTS, WPM_Hybird, WPM_MoQA');
         return;
@@ -625,7 +629,6 @@ async function loadFilesFromDataDir(year, month) {
 
         if (datasetMap.size > 0) {
             drawChart();
-            //document.getElementById('resetColorsBtn').style.display = 'inline-block';
         } else {
             alert(`沒有成功載入任何有效 CSV 檔案`);
         }
@@ -673,62 +676,6 @@ function resetAllRanges() {
     if (datasetMap.size > 0) {
         drawChart();
     }
-}
-
-function resetColors() {
-    const entries = Array.from(datasetMap.entries());
-    entries.forEach(([fileName, data], index) => {
-        const color = priorityFolders.includes(folder) ? '#FF0000' : defaultColors[datasetMap.size - 1 % defaultColors.length] || '#000000'; // Adjust index
-        data.color = newColor;
-        data.pointRadius = 2; // Reset point radius to default
-        const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
-        if (entryDiv) {
-            const colorPreview = entryDiv.querySelector('.color-preview-box-list');
-            if (colorPreview) {
-                colorPreview.style.backgroundColor = newColor;
-            }
-            const radiusInput = entryDiv.querySelector('.point-radius-input');
-            if (radiusInput) {
-                radiusInput.value = 2; // Update UI input
-            }
-            const modal = entryDiv.querySelector('.color-picker-modal');
-            if (modal) {
-                const hexInput = modal.querySelector('.hex-input');
-                const rgbSliders = modal.querySelectorAll('.rgb-slider');
-                const rgbNumbers = modal.querySelectorAll('.rgb-number');
-                const rgbPreviewBoxes = modal.querySelectorAll('.rgb-preview-box');
-                const opacitySlider = modal.querySelector('.opacity-slider');
-                const opacityNumber = modal.querySelector('.opacity-number');
-                const livePreview = modal.querySelector('.live-preview');
-                const nativeColorInput = modal.querySelector('.native-color-input');
-
-                const r = parseInt(newColor.slice(1, 3), 16);
-                const g = parseInt(newColor.slice(3, 5), 16);
-                const b = parseInt(newColor.slice(5, 7), 16);
-                const a = 1;
-
-                hexInput.value = newColor;
-                rgbSliders[0].value = r;
-                rgbSliders[1].value = g;
-                rgbSliders[2].value = b;
-                rgbNumbers[0].value = r;
-                rgbNumbers[1].value = g;
-                rgbNumbers[2].value = b;
-                rgbPreviewBoxes[0].style.backgroundColor = `rgb(${r}, 0, 0)`;
-                rgbPreviewBoxes[1].style.backgroundColor = `rgb(0, ${g}, 0)`;
-                rgbPreviewBoxes[2].style.backgroundColor = `rgb(0, 0, ${b})`;
-                opacitySlider.value = a;
-                opacityNumber.value = Math.round(a * 100); // Convert to percentage
-                livePreview.style.backgroundColor = newColor;
-                livePreview.style.opacity = a;
-                nativeColorInput.value = newColor;
-            }
-        }
-    });
-    if (datasetMap.size > 0) {
-        drawChart();
-    }
-    document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
 }
 
 function addFileEntryUI(fileName, defaultColor) {
@@ -1088,7 +1035,6 @@ function addFileEntryUI(fileName, defaultColor) {
     entry.appendChild(document.createTextNode(datasetMap.get(fileName).simplifiedName));
     //entry.appendChild(delBtn);
     container.appendChild(entry);
-    //document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
 }
 
 async function showDetailPanel(point, info, datasetName, dataEntry, currentIdx) {
@@ -1400,12 +1346,12 @@ function calculateFundLevel(stockPriceData, portfolioInfo, initFund) {
 async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) {
     const fundLevelTableSection = document.getElementById('fundLevelTableSection');
     const year = document.getElementById('yearInput').value;
-    let month = document.getElementById('periodInput').value;
-    if (currentPeriod === 'M2M') month = month.padStart(2, '0');
+    let period = document.getElementById('periodInput').value;
+    if (currentPeriod === 'M2M') period = period.padStart(2, '0');
     const dataSource = document.getElementById('dataSourceSelect').value;
     const currentMarket = MARKET_MAP[dataSource] || 'DJIA';
 
-    if (!year || !month) {
+    if (!year || !period) {
         fundLevelTableSection.innerHTML = '<p style="color:#999; font-family: \'標楷體\', \'Times New Roman\', serif;">無法載入：未選擇日期</p>';
         return;
     }
@@ -1413,9 +1359,9 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
     try {
         let url;
         if (currentPeriod === 'M2M')
-            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${month}%28${year}%20Q1%29.csv`;
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${period}%28${year}%20Q1%29.csv`;
         else if (currentPeriod === 'Q2Q')
-            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${month}%28${year}%20Q1%29.csv`;
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${period}%28${year}%20Q1%29.csv`;
         //alert(`${url}`)
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1675,39 +1621,39 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
         console.error(error);
     }
     
-    updateNextPeriodPreview(currentMarket, year, month, portfolioInfo, portfolioFS); // info = 當前投資組合比例
+    updateNextPeriodPreview(currentMarket, year, period, portfolioInfo, portfolioFS); // info = 當前投資組合比例
     
     document.getElementById('nextPeriodPreviewPanel').style.display = 'block';
 }
 
-async function updateNextPeriodPreview(currentMarket, currentYear, currentMonth, portfolioInfo, portfolioFS) {
+async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, portfolioInfo, portfolioFS) {
     const year = parseInt(currentYear);
-    let month = parseInt(currentMonth);
+    let period = parseInt(nowPeriod);
     let nowURL;
     if (currentPeriod === "M2M"){
-        nowURL = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${String(month).padStart(2,'0')}%28${year}%20Q1%29.csv`;
+        nowURL = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${String(period).padStart(2,'0')}%28${year}%20Q1%29.csv`;
     }else if (currentPeriod === "Q2Q") {
-        nowURL = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${month}%28${year}%20Q1%29.csv`;
+        nowURL = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${period}%28${year}%20Q1%29.csv`;
     }
     //document.getElementById('current-url-display').textContent = nowURL;
 
-    month += 1;
+    period += 1;
     let nextUrl, temp_test_year=year, nextMonthStr;
     if (currentPeriod === "M2M"){
-        if (month > 12) {
-            month = 1;
+        if (period > 12) {
+            period = 1;
             var nextYear = year + 1;
         } else { var nextYear = year; }
-        nextMonthStr = String(month).padStart(2, '0');
-        if(month===1) temp_test_year = nextYear-1;
+        nextMonthStr = String(period).padStart(2, '0');
+        if(period===1) temp_test_year = nextYear-1;
         nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/test_${nextYear}_${nextMonthStr}%28${temp_test_year}%20Q1%29.csv`;
     }else if (currentPeriod === "Q2Q") {
-        if (month > 4) {
-            month = 1;
+        if (period > 4) {
+            period = 1;
             var nextYear = year + 1;
         } else { var nextYear = year; }
-        if(month===1) temp_test_year = nextYear-1;
-        nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/test_${nextYear}_Q${month}%28${temp_test_year}%20Q1%29.csv`;
+        if(period===1) temp_test_year = nextYear-1;
+        nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/test_${nextYear}_Q${period}%28${temp_test_year}%20Q1%29.csv`;
     }
 
     //document.getElementById('next-url-display').textContent = nextUrl;
@@ -1745,11 +1691,11 @@ async function updateNextPeriodPreview(currentMarket, currentYear, currentMonth,
 
     let now_label, next_label;
     if(currentPeriod === "M2M") {
-        now_label = `Train Period: ${year}_${currentMonth.padStart(2,'0')}`;
+        now_label = `Train Period: ${year}_${nowPeriod.padStart(2,'0')}`;
         next_label = `Test Period: ${nextYear}_${nextMonthStr}`
     }else if(currentPeriod === "Q2Q") {
-        now_label = `Train Period: ${year}_Q${currentMonth}`;
-        next_label = `Test Period: ${nextYear}_Q${month}`
+        now_label = `Train Period: ${year}_Q${nowPeriod}`;
+        next_label = `Test Period: ${nextYear}_Q${period}`
     }
 
     window.nextPeriodChart = new Chart(ctx, {
@@ -2087,7 +2033,6 @@ function drawChart() {
     document.getElementById('chart-container').addEventListener('dblclick', function () {
         chartInstance.resetZoom();
     });
-    //document.getElementById('resetColorsBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
 
     // === 新增：快速按鈕事件綁定 ===
     const btnHighestReturn = document.getElementById('btn-highest-return');
