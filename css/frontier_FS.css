@@ -1,0 +1,1095 @@
+body {
+    font-family: '標楷體', 'Times New Roman', serif;
+    padding: 28px;
+    display: flex;
+    /*background-image: url("./png/FED.jpg");*/
+    background-size: cover;         /* 填滿整個畫面 */
+    background-position: center;    /* 讓圖片保持比例並置中 */
+    background-attachment: fixed;   /* 固定背景不滾動（可選） */
+    background-repeat: no-repeat;   /* 不重複圖片 */
+}
+
+/* 新的水平區間選擇器容器 */
+.period-sidebar {
+    position: fixed;
+    top: 75px;
+    right: 0px;
+    width: 161px;                  /* 可依需求調整寬度 */
+    height: 52px;                  /* 沒有sliderbar: 46px */
+    background-color: #f0f0f0;
+    border-radius: 6px 0 0 6px;
+    border: solid #ccc;
+    border-width: 1px 0 1px 1px;
+    padding: 2px 4px;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    font-family: 'Times New Roman', Times, serif;
+
+}
+.period-sidebar::-webkit-scrollbar {
+    height: 6px;
+    display: flex;
+}
+.period-sidebar::-webkit-scrollbar-track {
+    background: #f2f2f2;
+    border-radius: 4px;
+}
+.period-sidebar::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+    border-radius: 4px;
+}
+.period-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #bbbbbb;
+}
+
+/* 每個區間按鈕樣式（模仿你的 .date-entry） */
+.period-entry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 42px;
+    padding: 4 8px;
+    margin-right: 5px;
+    background-color: #ffffff;
+    border-radius: 6px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+.period-entry:hover {
+    transform: scale(1.03);
+    background-color: #e0e0e0;
+    font-size: 28px;
+    width: 100px;
+}
+.period-entry.selected {
+    background-color: #cfcfcf;
+    color: white;
+}
+.period-entry:active {
+    transform: scale(0.95);
+}
+
+.date-inputs {
+    position: fixed;
+    top: 44px;
+    right: 0px;
+    /* 與側邊欄觸發器對齊 */
+    display: flex;
+    align-items: center;
+    /*gap: 10px;*/
+    background-color: #f0f0f0;
+    /*padding: 6px;
+    border: 1px solid #ccc;
+    */
+    z-index: 1002;
+    /* 高於側邊欄 (z-index: 1000) 和觸發器 (z-index: 1001) */
+    border-radius: 4px;
+    /* 可選：保持圓角 */
+}
+
+.date-inputs input[type="number"] {
+    width: 60px;
+    padding: 3px;
+    font-size: 16px;
+    font-family: 'Times New Roman';
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    height: 24px;
+}
+
+.date-inputs button {
+    background-color: #f0f0f0;
+    color: #ffffff;
+    border: none;
+    padding: 1px 1px;
+    /* 減少按鈕內邊距 */
+    cursor: pointer;
+    font-size: 16px;
+    font-family: '標楷體', 'Times New Roman', serif;
+    width: 30px;
+    height: 24px;
+    display: flex;
+    /* 使用 flex 佈局 */
+    justify-content: center;
+    /* 水平居中 */
+    align-items: center;
+    /* 垂直居中 */
+    border-radius: 4px;
+    /* 保持圓角 */
+}
+
+.date-inputs button:hover {
+    background-color: #ccc;
+}
+
+.date-inputs button:hover::after {
+    background-color: #ffffff;
+    font-family: 'Times New Roman', Times, serif;
+    content: "Load";
+    position: absolute;
+    top: 100%;
+    right: 0%;
+    font-size: 20px;
+    color: black;
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+}
+
+.data-source-container {
+    font-family: 'Times New Roman', Times, serif;
+    position: fixed;
+    top: 10px;
+    right: 0px;
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    z-index: 1003;
+}
+
+.data-source-container select {
+    padding: 3px;
+    font-size: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 35px;
+    width: 170px;
+    background-color: #fff;
+    cursor: pointer;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.data-source-container select:focus {
+    outline: none;
+    border-color: #007BFF;
+}
+
+/* Sidebar styles */
+.sidebar {
+    top: 141px;                 /* 沒有sliderbar: 135px */
+    width: 110px;
+    height: auto;
+    max-height: calc(100vh - 135px - 5vh);  /* 下方最少距離5%高度 */
+    /* Adjust height to fit */
+    overflow-y: auto;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-width: 1px 0 1px 1px;
+    padding: 10px;
+    position: fixed;
+    right: -110px;
+    /* Hidden by default */
+    transition: right 0.3s ease;
+    /* Smooth sliding */
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.sidebar.visible {
+    right: 0;
+    /* Visible when hovered */
+}
+
+.sidebar-trigger {
+    position: fixed;
+    right: 0;
+    top: 28px;
+    width: 20px;
+    /* Trigger area */
+    height: calc(100vh - 56px);
+    background: transparent;
+    z-index: 1001;
+    cursor: pointer;
+}
+
+.date-entry {
+    padding: 9px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 20px;
+    font-family: 'Times New Roman', Times, serif;
+    /* 默認字體大小 */
+    text-align: center;
+}
+
+.date-entry:hover {
+    background-color: #e0e0e0;
+    font-size: 21px;
+    /* 懸停時略微放大 */
+}
+
+.date-entry:active {
+    transform: scale(0.9);
+}
+
+.date-entry.selected {
+    background-color: #007BFF;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+
+
+/* Customize link styles */
+.menu-link {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 30px;
+    color: #9bc5f2;
+    text-decoration: none;
+    margin-left: 10px;
+    /* Consistent spacing */
+    vertical-align: middle;
+    position: relative;
+    /* Anchor for absolute tooltip */
+    display: inline-block;
+    /* Prevent layout shift */
+}
+
+.menu-link:active {
+    font-size: 80%;
+}
+
+.menu-link:hover {
+    color: #0056b3;
+}
+
+.menu-link:hover::after {
+    content: "上傳自己的前緣";
+    font-family: '標楷體', 'Times New Roman', serif;
+    font-size: 26px;
+    color: black;
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    text-decoration: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(-5px);
+    /* align middle with link */
+    bottom: 100%;
+    /* Position above the link */
+    z-index: 1005;
+    /* Above other elements */
+}
+
+/* Main content */
+.main-content {
+    margin-right: 20px;
+    /* Space for trigger */
+    width: calc(100% - 20px);
+}
+
+#chart-wrapper {
+    position: relative;
+    display: none;  /* 初始隱藏，當有資料時才顯示 */
+    width: 80%;  /* 根據內容調整寬度 */
+    margin: 20px auto 0;  /* 整體置中 */
+    padding-right: 5%;  /* 為右側按鈕群組預留空間 */
+    background-color: #fff;
+}
+
+#chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 85%;
+    aspect-ratio: 16 / 10;
+    display: block;
+    /* 移除 margin，因為外層容器會處理 */
+}
+
+canvas {
+    width: 100% !important;
+    height: auto !important;
+}
+
+h1 {
+    margin-top: 0px;
+    margin-bottom: 20px;
+    font-family: '標楷體', 'Times New Roman', Times, serif;
+}
+
+.load-btn {
+    margin-left: 4px;
+    background-color: #007BFF;
+}
+.load-btn:hover {
+    background-color: #0056b3;
+}
+
+.controls,
+.range-controls {
+    font-size: 20px;
+    margin: 12px 0;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.controls input[type="file"] {
+    font-size: 18px;
+}
+
+.range-controls label,
+.range-controls input[type="number"],
+.range-controls button {
+    font-size: 18px;
+    font-family: "標楷體", "Times New Roman", serif;
+    font-weight: bold;
+}
+
+.reset-range-btn {
+    background-image: url('./png/reset.png');
+    background-size: 130%;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    background-color: transparent;
+    vertical-align: middle;
+}
+.reset-range-btn:hover::after {
+    content: "reset";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-family: 'Times New Roman', Times, serif;
+    color: black;
+    padding: 5px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+}
+.reset-range-btn:active {
+    transform: scale(0.9);
+}
+
+.reset-allrange-btn {
+    transform: translateY(10%);
+    margin-left: 14px;
+    background-color: #007BFF;
+    position: relative;       /* 為 tooltip 定位準備 */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    /*width: 8vh;
+    height: 4.5vh;*/
+    min-width: 70px;
+    min-height: 38px;
+}
+.reset-allrange-btn::before {
+    content: "All";       /* 在 CSS 內控制文字 -> 方便空自字型與大小 */
+    font-size: 24px;
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.reset-allrange-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.1) translateY(-10%);
+}     
+.reset-allrange-btn:hover::after {
+    content: "reset all range";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-family: 'Times New Roman', Times, serif;
+    color: rgb(255, 0, 0);
+    padding: 5px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+}
+.reset-allrange-btn:active {
+    transform: scale(0.9);
+}
+
+.tilde {
+    font-size: 1.5em;
+    vertical-align: middle;
+}
+
+.file-entry {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0;
+}
+
+.math-label {
+    font-size: 20px;
+}
+
+input[type="text"],
+input[type="number"] {
+    padding: 2px 4px;
+    /*font-family: 'Times New Roman', Times, serif;
+    font-size: 0.7em;*/
+}
+
+input[type="number"] {
+    font-family: 'Times New Roman', Times, serif;
+    width: 80px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+    height: 30px;
+    vertical-align: middle;
+}
+
+button {
+    background-color: #c00;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #900;
+}
+
+.show-table-btn {
+    display: none;
+    font-size: 16px;
+    font-family: '標楷體', 'Times New Roman', serif;
+    background-color: #007BFF;
+}
+
+.show-table-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Custom Color Picker Modal Styles */
+.color-picker-modal {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.point-radius-input {
+    margin-left: 6px;
+    padding: 2px 4px;
+    vertical-align: middle;
+}
+
+.color-picker-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 115px);
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+.color-picker-tabs button {
+    padding: 5px;
+    background: #f0f0f0;
+    /* 恢復默認背景色 */
+    color: #333333;
+    /* 恢復默認文字顏色 */
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 3px 3px 0 0;
+    text-align: center;
+    transition: background-color 0.2s ease;
+    /* 保持平滑過渡 */
+}
+
+.color-picker-content input[type="color"] {
+    width: 115px;
+    height: 40px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+}
+
+.color-picker-tabs button.active {
+    background: #007BFF;
+    color: white;
+    border-bottom: 2px solid #0056b3;
+}
+
+.color-picker-tabs button:hover {
+    background: #d0d0d0;
+    color: #000000;
+}
+
+.color-picker-content {
+    display: none;
+}
+
+.color-picker-content.active {
+    display: block;
+}
+
+.common-colors {
+    display: grid;
+    grid-template-columns: repeat(10, 30px);
+    grid-auto-rows: 30px;
+    gap: 5px;
+}
+
+.color-swatch {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.color-swatch:hover {
+    border-color: #000;
+}
+
+.hexrgb-inputs {
+    display: grid;
+    gap: 8px;
+}
+
+.hexrgb-inputs label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Keep horizontal gap as is or adjust as needed */
+    font-size: 14px;
+    margin-bottom: 4px;
+    /* Reduced from 8px to 4px for less vertical spacing */
+    width: 100%;
+}
+
+.hexrgb-inputs input.rgb-slider {
+    width: 115px;
+}
+
+.hexrgb-inputs input.rgb-slider,
+.hexrgb-inputs input.opacity-slider {
+    width: 100%;
+}
+
+.hexrgb-inputs input.rgb-number,
+.hexrgb-inputs input.opacity-number {
+    width: 50px;
+    padding: 3px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.hexrgb-inputs input.hex-input {
+    width: 100%;
+    padding: 5px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.hexrgb-inputs .confirm-btn {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 14px;
+    justify-self: center;
+}
+
+.hexrgb-inputs .confirm-btn:hover {
+    background-color: #0056b3;
+}
+
+.rgb-inputs input {
+    width: 60px;
+    padding: 3px;
+    font-size: 14px;
+}
+
+.rgb-preview-box {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
+    display: inline-block;
+    vertical-align: middle;
+    border-radius: 4px;
+    flex-shrink: 0;
+    /* Prevent preview box from shrinking */
+}
+
+.rgb-slider {
+    flex: 1;
+    /* Take remaining space */
+    min-width: 50px;
+    /* Ensure slider is usable */
+    vertical-align: middle;
+}
+
+.rgb-number {
+    width: 50px;
+    padding: 3px;
+    font-size: 20px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    /* Prevent number input from shrinking */
+    text-align: right;
+    /* 文字靠右對齊 */
+}
+
+.color-preview-box {
+    opacity: 1;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.color-preview-box-list {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.color-preview-box-list:hover {
+    border-color: #000;
+}
+
+.hexrgb-inputs label span {
+    font-size: 24px;
+    /* 保持字體大小 */
+    display: inline-block;
+    /* 讓它可以有寬度屬性 */
+    width: auto;
+    /* 自動寬度根據內容 */
+    white-space: nowrap;
+    /* 防止換行 */
+    font-family: "標楷體", "Times New Roman", serif;
+}
+
+/* ── 按鈕群組結構 ── */
+.quick-buttons-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 80%;                       /* 從圖表右邊開始 */
+    transform: translateY(-50%);
+    margin-left: 5%;                /* 與圖表間距 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;              /* 水平置中（內部內容） */
+    justify-content: center;          /* 垂直置中（若內容少） */
+
+    /* 外框尺寸 > 內容 */
+    width: 18%;     /* 20vh */
+    min-width: 190px;                 /* 比按鈕寬 */
+    padding: 22px 20px;               /* 上下左右內距 → 高度更大 */
+    gap: 14px;                        /* 標題與按鈕間距 */
+
+    /* 明顯邊框 + 圓角 + 陰影 */
+    background: rgba(255, 255, 255, 0.98);
+    border: 3px solid #b24ae2;        /* 粗邊框 */
+    border-radius: 16px;              /* 大圓角 */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+
+    z-index: 10;
+    font-family: 'Times New Roman', serif;
+}
+
+.quick-view-title {
+    font-size: 28px;
+    font-family: 'Times New Roman', 'serif';
+    font-weight: bold;
+    color: #000000;
+    text-align: center;
+}
+
+/* ── quick button共用框架 ── */
+.quick-btn {
+    color: white;
+    border: none;
+    padding: 11px 18px;
+    font-size: 18px;
+    font-family: 'Times New Roman', serif;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    width: 100%;
+    min-width: 140px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.quick-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* ── 各自專屬顏色 ── */
+#btn-highest-return {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52); /* 紅橘：高報酬 */
+}
+#btn-highest-return:hover {
+    background: linear-gradient(135deg, #F7635F, #E24C48);
+}
+
+#btn-highest-tr {
+    background: linear-gradient(135deg, #4ecdc4, #44a09a); /* 青綠：最佳 TR */
+}
+#btn-highest-tr:hover {
+    background: linear-gradient(135deg, #49B7AF, #49B7AF);
+}
+
+#btn-lowest-risk {
+    background: linear-gradient(135deg, #5c7cfa, #3b5bdb); /* 藍紫：低風險 */
+}
+#btn-lowest-risk:hover {
+    background: linear-gradient(135deg, #4C6CEB, #3350C7);
+}
+
+#detailPanel {
+    margin-top: 20px;
+    padding: 15px;
+    /*border: 1px solid #ccc;*/
+    border-radius: 20px;
+    display: none;
+    font-family: 'Times New Roman', Times, serif;
+    position: relative;
+    box-shadow: 0 4px 20px rgb(204, 204, 204);
+}
+
+#detailPanel .close-btn {
+    position: absolute;
+    top: 2%;
+    right: 0;
+    width: 5%;
+    height: 5%;
+    background-image: url('./png/delete.png');
+    background-color: transparent !important;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+    outline: none;
+}
+
+/* hover 效果：可選擇讓圖片變暗或換另一張 hover 圖 */
+#detailPanel .close-btn:hover {
+    content: "close";
+    transform: scale(1.1);
+}
+
+#detailPanel .close-btn:hover::after {
+    content: "Close";
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    font-size: 24px;
+    color: #000;
+    background: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    text-align: center;
+    font-family: 'Times New Roman', serif;
+    z-index: 11;            
+}
+
+#detailPanel .close-btn:active {
+    transform: scale(0.9);
+}
+
+
+#detailPanel h3 {
+    text-align: center;              /* 文字水平置中 */
+    font-family: "Times New Roman", serif; /* 指定字體，優先使用標楷體 */
+    font-size: 40px;                 /* 放大字體，可依需要調整 */
+    font-weight: bold;               /* 加粗 */
+}
+
+/* Portfolio Index 顯示在 h3 右邊 */
+.detail-header {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.detail-header h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 40px;
+    font-weight: bold;
+    font-family: 'Times New Roman', serif;
+    color: #000;
+    flex: 1;
+}
+
+.index-badge {
+    position: absolute;
+    right: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: #000;
+    font-family: 'Times New Roman', serif;
+    background: #f0f0f0;
+    padding: 4px 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    white-space: nowrap;
+    z-index: 5;
+}
+
+.fund-toggle-btn:hover {
+    opacity: 0.8;
+}
+
+.fund-toggle-btn.active {
+    font-weight: bold;
+}
+
+/* Fund Level 標題與切換按鈕共用列 */
+#detailPanel .fund-header {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    /*padding: 0 90px 10px 0;*/ /* 右側留白給按鈕 */
+    border-bottom: 2px solid #ddd;
+    box-sizing: border-box;
+}
+
+/* Fund Level 標題文字 */
+#detailPanel .fund-header h4 {
+    margin: 0;
+    font-size: 36px !important;
+    font-weight: bold;
+    font-family: 'Times New Roman', serif !important;
+    color: #000;
+    text-align: center;
+    width: fit-content;
+    position: relative;
+    padding-left: 100px;
+    z-index: 1;
+}
+
+#detailPanel .fund-toggle-group {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    z-index: 100; /* 關鍵：高於 canvas */
+}
+
+/* 切換按鈕 */
+#detailPanel .fund-toggle-btn {
+    background: #e6e6e6;
+    color: #333;
+    border: none;
+    padding: 0;
+    font-family: 'Times New Roman', serif;
+    font-size: 22px !important;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 80px;           /* 固定寬度 */
+    height: 40px;          /* 固定高度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 101; /* 更高 */
+}
+/* 選中狀態：深灰底 + 白字 */
+#detailPanel .fund-toggle-btn.active {
+    background: #a5a8ab !important;
+    color: #000 !important;
+}
+
+/* 非選中：淺灰底 + 黑字 */
+#detailPanel .fund-toggle-btn:not(.active) {
+    color: #000;
+}
+
+/* 懸停（非選中） */
+#detailPanel .fund-toggle-btn:hover:not(.active) {
+    background: #d0d0d0;
+}
+
+#detailPanel .fund-toggle-btn:first-child {
+    border-right: none !important;
+}
+
+/* 分隔線：只在第一個按鈕右邊 */
+#detailPanel .fund-toggle-btn:first-child::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: #aaa;
+}
+
+/* 圖表與表格容器 */
+#detailPanel #fundChartContainer,
+#detailPanel #fundTableContainer {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    min-height: 380px;
+    /* 移除 border */
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#detailPanel .pie-chart-wrapper {
+    width: 75%;           /* ← 這裡改成 60% 也可以 */
+    max-width: 800px;     /* 防止過大 */
+    margin: 0 auto;       /* 水平置中 */
+    aspect-ratio: 1 / 1;  /* 保持正圓 */
+}
+
+/* 導覽箭頭樣式 */
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5%;
+    height: 8%;
+    border: none;
+    padding: 0;
+    background-color: transparent !important;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: transform 0.2s ease;
+    outline: none;
+}
+
+/* 左箭頭 */
+.nav-arrow.prev {
+    background-image: url('./png/left_arrow.png');
+    left: -3%;
+}
+.nav-arrow.prev:hover {
+    /*transform: translateY(-50%) translateX(-4px);*/
+    transform: translateY(-50%) scale(1.05)
+}
+.nav-arrow.prev:hover::after {
+    content: "Previous Portfolio\A Lower Risk with Lower Return";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-10%);
+    font-size: 16px;
+    color: #000;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    white-space: pre;      /* 讓 \A 換行生效 */
+    text-align: center;
+    font-family: 'Times New Roman', serif;
+    z-index: 1000;
+    display: inline-block; /* 確保正確換行 */
+}
+.nav-arrow.prev:active {
+    transform: translateY(-50%) translateX(-20%) scale(1.05);
+}
+
+/* 右箭頭 */
+.nav-arrow.next {
+    background-image: url('./png/right_arrow.png');
+    right: -3%;
+}
+.nav-arrow.next:hover {
+    /*transform: translateY(-50%) translateX(4px);*/
+    transform: translateY(-50%) scale(1.05)
+}
+.nav-arrow.next:hover::after {
+    content: "Next Portfolio\A Higher Return with Higher Risk";
+    position: absolute;
+    bottom: 100%;
+    right: 50%;
+    transform: translateX(10%);
+    font-size: 16px;
+    color: #000;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    white-space: pre;      /* 讓 \A 換行生效 */
+    text-align: center;
+    font-family: 'Times New Roman', serif;
+    z-index: 1000;
+    display: inline-block; /* 確保正確換行 */
+}
+.nav-arrow.next:active {
+    transform: translateY(-50%) translateX(20%) scale(1.05);
+}
+
+/*.nav-arrow:active {
+    transform: translateY(-50%) scale(0.92) !important;
+}*/
