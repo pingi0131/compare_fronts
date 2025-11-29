@@ -33,7 +33,7 @@ const periodRanges = {
         M2M: {minY:2023,minM:1, maxY:2025,maxM:4}, 
         Q2Q: {minY:2020,minQ:1, maxY:2024,maxQ:3},
         H2H: {minY:2020,minH:1, maxY:2024,maxH:1},
-        //Y2Y: {minY:2020,        maxY:2024}
+        Y2Y: {minY:2020,        maxY:2024}
     }
 };
 
@@ -69,6 +69,9 @@ const csvPortfolioPathMap = {
             halfYearLabel = Number(halfYearLabel.replace('H', ''));
             halfYearLabel = halfYearLabel*2-1;
             return [`H-MoQTS/H-MoQTS/H2H/UA_NIKKEI30%26DJIA30_${year}_Q${halfYearLabel}-Q${halfYearLabel+1}%28${year}%20Q1%29_60%23_front.csv`];
+        },
+        Y2Y: (year) => {
+            return [`H-MoQTS/H-MoQTS/Y2Y/UA_NIKKEI30%26DJIA30_${year}%28${year}%20Q1%29_60%23_front.csv`];
         }
     }
 };
@@ -148,6 +151,10 @@ function generateDateList() {
                 dates.push(`${y}_H${h}`);   // 2025_H1
             }
         }
+    } else if(currentPeriod === 'Y2Y') {
+        for (let y = r.maxY; y >= r.minY; y--) {
+            dates.push(`${y}`);   // 2025
+        }
     }
     return dates;
 }
@@ -163,6 +170,7 @@ function populateDateSidebar() {
     document.getElementById('fileListContainer').innerHTML = '';
     hideDetailPanel();
     const dates = generateDateList();
+    //console.log(dates)
 
     if (dates.length === 0) {   // ── 沒有資料時顯示「No Data」──
         const noDataDiv = document.createElement('div');
@@ -208,8 +216,10 @@ function populateDateSidebar() {
                 const quarterNum = rest.replace('Q', '');  // "Q1" → "1"
                 periodInput.value = quarterNum;
             } else if(currentPeriod === 'H2H') {
-                const halfYearNum = rest.replace('H', '');  // "Q1" → "1"
+                const halfYearNum = rest.replace('H', '');  // "H1" → "1"
                 periodInput.value = halfYearNum;
+            } else if(currentPeriod === 'Y2Y') {
+                periodInput.value = '';
             }
 
             loadFilesFromDataDir(year, rest); // rest 可能是 04 或 Q1
@@ -539,7 +549,7 @@ async function loadFilesFromDataDir(year, period) {
     hideDetailPanel();
     document.getElementById('chart-wrapper').style.display = 'none';
     document.getElementById('fileListContainer').innerHTML = '';
-    if (!year || !period) {
+    if (!year || (currentPeriod !== 'Y2Y' && !period)) {        // 是Y2Y就不用有period
         alert('請選擇一個日期');
         return;
     }
@@ -1369,7 +1379,7 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
     const dataSource = document.getElementById('dataSourceSelect').value;
     const currentMarket = MARKET_MAP[dataSource] || 'DJIA';
 
-    if (!year || !period) {
+    if (!year || (currentPeriod !== 'Y2Y' && !period)) {
         fundLevelTableSection.innerHTML = '<p style="color:#999; font-family: \'標楷體\', \'Times New Roman\', serif;">無法載入：未選擇日期</p>';
         return;
     }
@@ -1383,9 +1393,11 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
         else if (currentPeriod === 'H2H'){
             period = Number(period)*2-1;
             url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/train_${year}_Q${period}-Q${period+1}%28${year}%20Q1%29.csv`;
-        }
+        } else if (currentPeriod === 'Y2Y')
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Y2Y/train_${year}%28${year}%20Q1%29.csv`;
+        
 
-        console.log(url)
+        //console.log(url)
         //alert(`${url}`)
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1661,7 +1673,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
     }
     //document.getElementById('current-url-display').textContent = nowURL;
 
-    period += 1;
+    if(currentPeriod != 'Y2Y') period += 1;
     let nextUrl, temp_test_year=year, nextMonthStr;
     if (currentPeriod === "M2M"){
         if (period > 12) {
@@ -1686,8 +1698,12 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
         } else { var nextYear = year; }
         if(period===1) temp_test_year = nextYear-1;
         nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/test_${nextYear}_Q${period}-Q${period+1}%28${temp_test_year}%20Q1%29.csv`;
+    } else if (currentPeriod === "Y2Y") {
+        var nextYear = year + 1;
+        temp_test_year = nextYear-1;
+        nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Y2Y/test_${nextYear}%28${temp_test_year}%20Q1%29.csv`;
     }
-    console.log(nextUrl)
+    //console.log(nextUrl)
 
     //document.getElementById('next-url-display').textContent = nextUrl;
 
@@ -1732,7 +1748,20 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
     } else if(currentPeriod === "H2H") {
         now_label = `Train Period: ${year}_Q${nowPeriod}-Q${nowPeriod+1}`;
         next_label = `Test Period: ${nextYear}_Q${period}-Q${period+1}`
+    } else if(currentPeriod === "Y2Y") {
+        now_label = `Train Period: ${year}`;
+        next_label = `Test Period: ${nextYear}`
     }
+
+    let bw = 3;  // default for smaller
+    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q') bw = 5;
+    else if (currentPeriod === 'H2H') bw = 4;
+    else if (currentPeriod === 'Y2Y') bw = 3;
+
+    let dashStyle = [];
+    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q') dashStyle = [20, 5];     // 虛線
+    else if (currentPeriod === 'H2H') dashStyle = [12, 5];     // 中短虛線
+    else if (currentPeriod === 'Y2Y') dashStyle = [5, 2];      // 點線感覺
 
     //console.log(nextFS)
     window.nextPeriodChart = new Chart(ctx, {
@@ -1745,7 +1774,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
                     data: combinedData.map((v, i) => i < splitIndex ? v : null), // 只畫歷史部分
                     borderColor: '#007BFF',
                     backgroundColor: '#007BFF',
-                    borderWidth: 5,
+                    borderWidth: bw,
                     pointRadius: 0,
                     tension: 0.15,
                     fill: false,
@@ -1756,7 +1785,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
                     data: combinedData.map((v, i) => i >= splitIndex-1 ? v : null), // 只畫未來部分
                     borderColor: 'rgba(255, 68, 68, 0.5)',
                     backgroundColor: 'rgba(255, 68, 68, 0.5)',
-                    borderWidth: 5,
+                    borderWidth: bw,
                     borderDash: [20, 5],
                     pointRadius: 0,
                     tension: 0.15,
@@ -1863,7 +1892,8 @@ function drawChart() {
             let fullPeriodName = period.replace('H','');
             fullPeriodName = Number(fullPeriodName)*2-1;
             periodName = `Q${fullPeriodName}-Q${fullPeriodName+1}` || 'Unknown';
-        }
+        }else if (currentPeriod === 'Y2Y')
+            periodName = '';
 
         // 取得目前選擇的 dataSource
         const dataSourceSelect = document.getElementById('dataSourceSelect');
