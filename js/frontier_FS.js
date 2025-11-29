@@ -31,7 +31,9 @@ const periodRanges = {
     WPM_MoQA:    { M2M: {minY:2021,minM:12, maxY:2025,maxM:4}},
     "EPM_H-MoQTS": { 
         M2M: {minY:2023,minM:1, maxY:2025,maxM:4}, 
-        Q2Q: {minY:2020,minQ:1, maxY:2024,maxQ:3} 
+        Q2Q: {minY:2020,minQ:1, maxY:2024,maxQ:3},
+        H2H: {minY:2020,minH:1, maxY:2024,maxH:1},
+        //Y2Y: {minY:2020,        maxY:2024}
     }
 };
 
@@ -62,6 +64,11 @@ const csvPortfolioPathMap = {
         Q2Q: (year, quarterLabel) => {
             quarterLabel = quarterLabel.replace('Q', '');
             return [`H-MoQTS/H-MoQTS/Q2Q/UA_NIKKEI30%26DJIA30_${year}_Q${quarterLabel}%28${year}%20Q1%29_60%23_front.csv`];
+        },
+        H2H: (year, halfYearLabel) => {
+            halfYearLabel = Number(halfYearLabel.replace('H', ''));
+            halfYearLabel = halfYearLabel*2-1;
+            return [`H-MoQTS/H-MoQTS/H2H/UA_NIKKEI30%26DJIA30_${year}_Q${halfYearLabel}-Q${halfYearLabel+1}%28${year}%20Q1%29_60%23_front.csv`];
         }
     }
 };
@@ -126,12 +133,19 @@ function generateDateList() {
             }
         }
     } else if(currentPeriod === 'Q2Q') {
-        // Q2Q/H2H/Y2Y → YYYY_Qx 格式（Q1~Q4）
         for (let y = r.maxY; y >= r.minY; y--) {
             const maxQ = (y === r.maxY) ? r.maxQ : 4;
             const minQ = (y === r.minY) ? r.minQ : 1;
             for (let q = maxQ; q >= minQ; q--) {
                 dates.push(`${y}_Q${q}`);   // 2025_Q1
+            }
+        }
+    } else if(currentPeriod === 'H2H') {
+        for (let y = r.maxY; y >= r.minY; y--) {
+            const maxH = (y === r.maxY) ? r.maxH : 2;
+            const minH = (y === r.minY) ? r.minH : 1;
+            for (let h = maxH; h >= minH; h--) {
+                dates.push(`${y}_H${h}`);   // 2025_H1
             }
         }
     }
@@ -190,9 +204,12 @@ function populateDateSidebar() {
             const periodInput = document.getElementById('periodInput');
             if (currentPeriod === 'M2M') {
                 periodInput.value = parseInt(rest);
-            } else {
+            } else if(currentPeriod === 'Q2Q') {
                 const quarterNum = rest.replace('Q', '');  // "Q1" → "1"
                 periodInput.value = quarterNum;
+            } else if(currentPeriod === 'H2H') {
+                const halfYearNum = rest.replace('H', '');  // "Q1" → "1"
+                periodInput.value = halfYearNum;
             }
 
             loadFilesFromDataDir(year, rest); // rest 可能是 04 或 Q1
@@ -542,6 +559,7 @@ async function loadFilesFromDataDir(year, period) {
         alert('只顯示我們的方法 WPM_MoQTS, WPM_Hybird, WPM_MoQA');
         return;
     }
+    //console.log(csvFiles)
 
     try {
         datasetMap.clear();
@@ -1362,6 +1380,12 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
             url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/train_${year}_${period}%28${year}%20Q1%29.csv`;
         else if (currentPeriod === 'Q2Q')
             url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${period}%28${year}%20Q1%29.csv`;
+        else if (currentPeriod === 'H2H'){
+            period = Number(period)*2-1;
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/train_${year}_Q${period}-Q${period+1}%28${year}%20Q1%29.csv`;
+        }
+
+        console.log(url)
         //alert(`${url}`)
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1647,14 +1671,23 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
         nextMonthStr = String(period).padStart(2, '0');
         if(period===1) temp_test_year = nextYear-1;
         nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/M2M/test_${nextYear}_${nextMonthStr}%28${temp_test_year}%20Q1%29.csv`;
-    }else if (currentPeriod === "Q2Q") {
+    } else if (currentPeriod === "Q2Q") {
         if (period > 4) {
             period = 1;
             var nextYear = year + 1;
         } else { var nextYear = year; }
         if(period===1) temp_test_year = nextYear-1;
         nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/test_${nextYear}_Q${period}%28${temp_test_year}%20Q1%29.csv`;
+    } else if (currentPeriod === "H2H") {
+        period = 2*period-1;
+        if (period > 3) {
+            period = 1;
+            var nextYear = year + 1;
+        } else { var nextYear = year; }
+        if(period===1) temp_test_year = nextYear-1;
+        nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/test_${nextYear}_Q${period}-Q${period+1}%28${temp_test_year}%20Q1%29.csv`;
     }
+    console.log(nextUrl)
 
     //document.getElementById('next-url-display').textContent = nextUrl;
 
@@ -1693,11 +1726,15 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
     if(currentPeriod === "M2M") {
         now_label = `Train Period: ${year}_${nowPeriod.padStart(2,'0')}`;
         next_label = `Test Period: ${nextYear}_${nextMonthStr}`
-    }else if(currentPeriod === "Q2Q") {
+    } else if(currentPeriod === "Q2Q") {
         now_label = `Train Period: ${year}_Q${nowPeriod}`;
         next_label = `Test Period: ${nextYear}_Q${period}`
+    } else if(currentPeriod === "H2H") {
+        now_label = `Train Period: ${year}_Q${nowPeriod}-Q${nowPeriod+1}`;
+        next_label = `Test Period: ${nextYear}_Q${period}-Q${period+1}`
     }
 
+    //console.log(nextFS)
     window.nextPeriodChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1714,6 +1751,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
                     fill: false,
                 },
                 {
+                    //label: nextFS.length ? next_label : '',
                     label: next_label,
                     data: combinedData.map((v, i) => i >= splitIndex-1 ? v : null), // 只畫未來部分
                     borderColor: 'rgba(255, 68, 68, 0.5)',
@@ -1821,6 +1859,11 @@ function drawChart() {
             periodName = monthNames[parseInt(period, 10) - 1] || 'Unknown';
         else if (currentPeriod === 'Q2Q')
             periodName = period || 'Unknown';
+        else if (currentPeriod === 'H2H'){
+            let fullPeriodName = period.replace('H','');
+            fullPeriodName = Number(fullPeriodName)*2-1;
+            periodName = `Q${fullPeriodName}-Q${fullPeriodName+1}` || 'Unknown';
+        }
 
         // 取得目前選擇的 dataSource
         const dataSourceSelect = document.getElementById('dataSourceSelect');
