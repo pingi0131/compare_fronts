@@ -226,6 +226,8 @@ function populateDateSidebar() {
         });
         sidebar.appendChild(div);
     });
+    // 呼叫更新 placeholder 和 disabled 狀態
+    updatePeriodInputState();
 }
 
 function initializeSidebarHover() {
@@ -302,6 +304,8 @@ function initializeDataSourceSelect() {
             entry.classList.remove('selected');
         });
     });
+    // 呼叫更新 placeholder 和 disabled 狀態
+    updatePeriodInputState();
 }
 
 // Call populateDateSidebar when the page loads
@@ -374,6 +378,38 @@ function initializeDateInputs() {
             }
         });
     });
+}
+
+function updatePeriodInputState() {
+    const periodInput = document.getElementById('periodInput');
+    periodInput.step = 1;  // 預設 step=1
+
+    if (currentPeriod === 'M2M') {
+        periodInput.placeholder = "Month";
+        periodInput.min = 1;
+        periodInput.max = 12;
+        periodInput.disabled = false;
+    } else if (currentPeriod === 'Q2Q') {
+        periodInput.placeholder = "quarter";
+        periodInput.min = 1;
+        periodInput.max = 4;
+        periodInput.disabled = false;
+    } else if (currentPeriod === 'H2H') {
+        periodInput.placeholder = "Half Y";
+        periodInput.min = 1;
+        periodInput.max = 2;
+        periodInput.disabled = false;
+    } else if (currentPeriod === 'Y2Y') {
+        periodInput.placeholder = "---";
+        periodInput.min = "";
+        periodInput.max = "";
+        periodInput.value = "";
+        periodInput.disabled = true;
+    }
+
+    // 強制更新輸入框約束
+    const event = new Event('input');
+    document.getElementById('yearInput').dispatchEvent(event);
 }
 
 // 共用：取得目前資料來源的期間範圍物件
@@ -469,6 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('yearInput').value = '';
             document.getElementById('periodInput').value = '';
             hideDetailPanel();
+            updatePeriodInputState();
         });
     });
     // 支援滑鼠滾輪水平滾動（很多使用者習慣垂直滾輪）
@@ -554,8 +591,9 @@ async function loadFilesFromDataDir(year, period) {
         return;
     }
     const dataSource = document.getElementById('dataSourceSelect').value;
-    let paddedMonth = period;
-    if (currentPeriod === 'M2M') paddedMonth = period.padStart(2, '0');
+    
+    if (currentPeriod === 'M2M') period = period.padStart(2, '0');
+    if (currentPeriod === 'Y2Y') period = '';
     // 關鍵：使用 currentPeriod 來決定資料夾
     const periodFolder = currentPeriod;   // M2M / Q2Q / H2H / Y2Y
     let csvFiles = [];
@@ -564,7 +602,7 @@ async function loadFilesFromDataDir(year, period) {
     const generator = csvPortfolioPathMap[dataSource]?.[currentPeriod];
 
     if (generator) {
-        csvFiles = generator(year, period); // month 可以在 Q2Q 不需要時忽略
+        csvFiles = generator(year, period);
     } else {
         alert('只顯示我們的方法 WPM_MoQTS, WPM_Hybird, WPM_MoQA');
         return;
@@ -630,7 +668,7 @@ async function loadFilesFromDataDir(year, period) {
                     //                    folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
                     const displayFolder = folder;
                     const color = '#FF0000';
-                    const simplifiedFileName = `${displayFolder}_${year}_${paddedMonth}_front.csv`;
+                    const simplifiedFileName = `${displayFolder}_${year}_${period}_front.csv`;
                     // 計算每個點的 TR = y / x (return/risk)
                     const TrendRatio = parsed.map(p => p.y / p.x);
                     const maxTR = Math.max(...TrendRatio);
