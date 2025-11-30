@@ -668,7 +668,10 @@ async function loadFilesFromDataDir(year, period) {
                     //                    folder.includes('Hybrid') ? 'Hybrid' : 'MoQA';
                     const displayFolder = folder;
                     const color = '#FF0000';
-                    const simplifiedFileName = `${displayFolder}_${year}_${period}_front.csv`;
+                    let simplifiedFileName;
+                    if (period) simplifiedFileName = `${displayFolder}_${year}_${period}_front.csv`;
+                    else simplifiedFileName = `${displayFolder}_${year}_front.csv`;
+                    //const simplifiedFileName = `${displayFolder}_${year}_${period}_front.csv`;
                     // 計算每個點的 TR = y / x (return/risk)
                     const TrendRatio = parsed.map(p => p.y / p.x);
                     const maxTR = Math.max(...TrendRatio);
@@ -1943,7 +1946,10 @@ function drawChart() {
         const algorithmName = parts[1] || 'Unknown';
 
         // 組合最終標題
-        title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${periodName} ${year}`;
+        if (periodName)
+            title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${periodName} ${year}`;
+        else
+            title = `${algorithmName} Frontier in ${modelType} with Funds Standardization in ${year}`;
     }
     chartInstance = new Chart(ctx, {
         type: 'scatter',
