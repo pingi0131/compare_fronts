@@ -1093,3 +1093,83 @@ button:hover {
 /*.nav-arrow:active {
     transform: translateY(-50%) scale(0.92) !important;
 }*/
+
+.test-period-panel {
+    display: none;
+    margin-top: 30px;
+    padding: 25px;
+    border: 3px solid #b24ae2;
+    border-radius: 16px;
+    background: #fbfaff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.test-period-title {
+    text-align: center;
+    margin: 0 0 20px 0;
+    font-size: 40px;
+    font-family: 'Times New Roman', serif;
+    color: #000000;
+}
+
+
+.period-urls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 24px;
+    padding: 0 20px;
+    font-size: 19px;
+}
+
+.url-item {
+    min-width: 320px;
+    text-align: left;
+}
+
+.url-item strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+#current-url-display {
+    background: #f0f0f0;
+    color: #2c3e50;
+}
+
+#next-url-display {
+    background: #fff0e6;
+    color: #d35400;
+}
+
+#current-url-display,
+#next-url-display {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    word-break: break-all;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.fund-chart-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    max-height: 60vh;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.12);
+    margin: 0 auto;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+#nextPeriodFundChart {
+    width: 100% !important;
+    height: 100% !important;
+}

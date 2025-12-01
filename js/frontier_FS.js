@@ -9,6 +9,7 @@ let initialRanges = {
 };
 const priorityFolders = ['MoQTS', 'MoQA', 'with ELS', 'Our method', 'MoQIO', 'Hybrid', 'H-MoQTS'];     // 設定優先排序的名稱，包括matrix和前緣顏色
 let modalCounter = 0;
+const FUND_UNIT = 1000000;
 
 const MARKET_GROUPS = {     // 設定演算法的投資市場
     DJIA:          ['WPM_MoQTS', 'WPM_Hybrid', 'WPM_MoQA'],
@@ -1151,7 +1152,7 @@ async function showDetailPanel(point, info, datasetName, dataEntry, currentIdx) 
             ${nextIdx !== -1 ? `<button class="nav-arrow next"></button>` : ''}
 
             <!-- 左側：資金水位區域 -->
-                <div style="flex: 5.5; min-width: 100px; display: flex; flex-direction: column;">
+                <div style="flex: 6; min-width: 100px; display: flex; flex-direction: column;">
                     <!-- 標題 + 切換按鈕（共用一行） -->
                     <div class="fund-header">
                         
@@ -1177,7 +1178,7 @@ async function showDetailPanel(point, info, datasetName, dataEntry, currentIdx) 
                     </div>
                 </div>
             <!-- 右側：基本資訊 + 圓餅圖 -->
-            <div style="flex: 4.5; min-width: 300px; padding-left: 10px; display: flex; flex-direction: column; gap: 20px;">
+            <div style="flex: 4; min-width: 300px; padding-left: 10px; display: flex; flex-direction: column; gap: 20px;">
                 <div style="margin-bottom: 20px;">
                     <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Risk:</strong> ${formatNum(point.x, 20)}</p>
                     <p style="font-family: 'Times New Roman', serif; font-size: 22px; margin: 8px 0;"><strong>Return:</strong> ${formatNum(point.y, 20)}</p>
@@ -1573,14 +1574,17 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
                     y: {
                         beginAtZero: false,
                         ticks: {
-                            callback: value => `$${formatNum(value, 0)}`,
-                            font: { family: " 'Times New Roman', serif", size: 20, weight: 'bold' },
+                            //callback: value => `$${formatNum(value, 0)}`,
+                            callback: function(value) {
+                                return (value / FUND_UNIT).toFixed(1);
+                            },
+                            font: { family: " 'Times New Roman', serif", size: 24, weight: 'bold' },
                             color: '#000'
                         },
                         title: {
                             display: true,
-                            text: 'Funds Standardization',
-                            font: { family: " 'Times New Roman', serif", size: 26, weight: 'bold' },
+                            text: `                 Funds Standardization        x${formatNum(FUND_UNIT,0)}`, 
+                            font: { family: " 'Times New Roman', serif", size: 28, weight: 'bold' },
                             color: '#000'
                         }
                     },
@@ -1840,13 +1844,15 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
             scales: {
                 y: { 
                     ticks: { 
-                        callback: v => `$${formatNum(v, 0)}`, 
+                        callback: function(value) {
+                            return (value / FUND_UNIT).toFixed(1);
+                        },
                         font: { size: 22, family: 'Times New Roman', weight: 'bold' },
                         color: '#000',
                     },
                     title: { 
                         display: true, 
-                        text: 'Funds Standardization', 
+                        text: `  Funds Standardization   x${formatNum(FUND_UNIT,0)}`, 
                         font: { size: 24, family: 'Times New Roman', weight: 'bold' },
                         color: '#000',
                     },
