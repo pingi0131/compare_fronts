@@ -34,7 +34,8 @@ const periodRanges = {
         M2M: {minY:2023,minM:1, maxY:2025,maxM:4}, 
         Q2Q: {minY:2020,minQ:1, maxY:2024,maxQ:3},
         H2H: {minY:2020,minH:1, maxY:2024,maxH:1},
-        Y2Y: {minY:2020,        maxY:2024}
+        Y2Y: {minY:2020,        maxY:2024},
+        'Q#':{minY:2020,minQ:1, maxY:2023,maxQ:4}
     }
 };
 
@@ -73,7 +74,12 @@ const csvPortfolioPathMap = {
         },
         Y2Y: (year) => {
             return [`H-MoQTS/H-MoQTS/Y2Y/UA_NIKKEI30%26DJIA30_${year}%28${year}%20Q1%29_60%23_front.csv`];
-        }
+        },
+        'Q#': (year, quarterLabel) => {
+            quarterLabel = quarterLabel.replace('Q', '');
+            return [`H-MoQTS/H-MoQTS/Q%23/UA_NIKKEI30%26DJIA30_${year}_Q${quarterLabel}%28${year}%20Q1%29_60%23_front.csv`];
+        },
+        
     }
 };
 
@@ -122,6 +128,7 @@ function generateDateList() {
     else if (currentPeriod === 'Q2Q') r = range.Q2Q;
     else if (currentPeriod === 'H2H') r = range.H2H;
     else if (currentPeriod === 'Y2Y') r = range.Y2Y;
+    else if (currentPeriod === 'Q#') r =range["Q#"];
     else r = null;
 
     if (!r) return [];      // 沒有設定這個 period 時回傳 []
@@ -136,7 +143,7 @@ function generateDateList() {
                 dates.push(`${y}_${String(m).padStart(2,'0')}`);
             }
         }
-    } else if(currentPeriod === 'Q2Q') {
+    } else if(currentPeriod === 'Q2Q' || currentPeriod === 'Q#') {
         for (let y = r.maxY; y >= r.minY; y--) {
             const maxQ = (y === r.maxY) ? r.maxQ : 4;
             const minQ = (y === r.minY) ? r.minQ : 1;
@@ -213,7 +220,7 @@ function populateDateSidebar() {
             const periodInput = document.getElementById('periodInput');
             if (currentPeriod === 'M2M') {
                 periodInput.value = parseInt(rest);
-            } else if(currentPeriod === 'Q2Q') {
+            } else if(currentPeriod === 'Q2Q' || currentPeriod === 'Q#') {
                 const quarterNum = rest.replace('Q', '');  // "Q1" → "1"
                 periodInput.value = quarterNum;
             } else if(currentPeriod === 'H2H') {
@@ -390,7 +397,7 @@ function updatePeriodInputState() {
         periodInput.min = 1;
         periodInput.max = 12;
         periodInput.disabled = false;
-    } else if (currentPeriod === 'Q2Q') {
+    } else if (currentPeriod === 'Q2Q' || currentPeriod === 'Q#') {
         periodInput.placeholder = "quarter";
         periodInput.min = 1;
         periodInput.max = 4;
@@ -422,6 +429,7 @@ function getCurrentRange() {
     if (currentPeriod === 'Q2Q') return ranges.Q2Q || {};
     if (currentPeriod === 'H2H') return ranges.H2H || {};
     if (currentPeriod === 'Y2Y') return ranges.Y2Y || {};
+    if (currentPeriod === 'Q#') return ranges['Q#'] || {};
     return {};
 }
 
@@ -1375,18 +1383,19 @@ function calculateFundLevel(stockPriceData, portfolioInfo, initFund) {
     for (let i = 0; i < stockPriceData[0].length; i++) {
         allocateMoney[i] = 0;
     }
-
+    
     // 分配資金
     let index = 0;
     for (let i = 0; i < stockPriceData[0].length; i++) {
         if (index < stocks.length && stocks[index] === stockPriceData[0][i]) {
-            const allocation = parseFloat(allocations[index].toFixed(2));
-            allocateMoney[i] = initFund * allocation / 100;
+            const allocation = parseFloat(allocations[index]);              // 先計算分配到幾%
+            allocateMoney[i] = (initFund * allocation / 100).toFixed(0);    // 再轉成整數
             initRemainFund -= allocateMoney[i];
             index++;
         }
     }
-
+    //console.log(stocks, allocations, allocateMoney)
+    
     // 計算每支股票的股數和剩餘現金
     for (let i = 0; i < stockPriceData[0].length; i++) {
         if (allocateMoney[i] > 0) {
@@ -1400,6 +1409,7 @@ function calculateFundLevel(stockPriceData, portfolioInfo, initFund) {
     }
 
     // 計算每日資金水位 (FS)
+    const outputLines = [];
     for (let i = 1; i < stockPriceData.length; i++) {
         if (stockPriceData[i].length % 30 !== 0) break;
         fs[i] = 0;
@@ -1408,7 +1418,9 @@ function calculateFundLevel(stockPriceData, portfolioInfo, initFund) {
             fs[i] += price * stockNum[j] + remainMoney[j];
         }
         fs[i] += initRemainFund;
+        outputLines.push(`${i}: ${fs[i].toFixed(2)}`);
     }
+    //console.log(outputLines.join("\n"));
 
     return fs;
 }
@@ -1433,11 +1445,12 @@ async function drawFundLevelChartAndTable(chartId, portfolioInfo, sortedStocks) 
         else if (currentPeriod === 'Q2Q')
             url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q2Q/train_${year}_Q${period}%28${year}%20Q1%29.csv`;
         else if (currentPeriod === 'H2H'){
-            period = Number(period)*2-1;
-            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/train_${year}_Q${period}-Q${period+1}%28${year}%20Q1%29.csv`;
+            let tempHPeriod = Number(period)*2-1;
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/H2H/train_${year}_Q${tempHPeriod}-Q${tempHPeriod+1}%28${year}%20Q1%29.csv`;
         } else if (currentPeriod === 'Y2Y')
             url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Y2Y/train_${year}%28${year}%20Q1%29.csv`;
-        
+        else if (currentPeriod === 'Q#')
+            url = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q%23/train_${year}_Q${period}%28${year}%20Q1%29.csv`;
 
         //console.log(url)
         //alert(`${url}`)
@@ -1718,7 +1731,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
     }
     //document.getElementById('current-url-display').textContent = nowURL;
 
-    if(currentPeriod != 'Y2Y') period += 1;
+    if(currentPeriod != 'Y2Y' && !currentPeriod.includes('#')) period += 1;
     let nextUrl, temp_test_year=year, nextMonthStr;
     if (currentPeriod === "M2M"){
         if (period > 12) {
@@ -1747,6 +1760,10 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
         var nextYear = year + 1;
         temp_test_year = nextYear-1;
         nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Y2Y/test_${nextYear}%28${temp_test_year}%20Q1%29.csv`;
+    } else if (currentPeriod === "Q#") {
+        var nextYear = year + 1;
+        temp_test_year = nextYear-1;
+        nextUrl = `https://pingi0131.github.io/compare_fronts/stock_price/${currentMarket}/Q%23/test_${nextYear}_Q${period}%28${temp_test_year}%20Q1%29.csv`;
     }
     //console.log(nextUrl)
 
@@ -1770,6 +1787,8 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
             const lines = text.trim().split('\n').map(l => l.trim());
             const data = lines.map(line => line.split(',').map(v => v.trim()));
             nextFS = calculateFundLevel(data, portfolioInfo, currentFS[currentFS.length - 1]);
+            //nextFS = calculateFundLevel(data, portfolioInfo, 10000000);
+            //console.log(`${year}_${nowPeriod}`, currentPeriod, `\nlen: ${nextFS.length - 1}`, `FS: ${nextFS[nextFS.length - 1].toFixed(2)}`)
         }
     } catch (e) {
         console.warn('Next period not available yet');
@@ -1787,26 +1806,29 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
     if(currentPeriod === "M2M") {
         now_label = `Train Period: ${year}_${nowPeriod.padStart(2,'0')}`;
         next_label = `Test Period: ${nextYear}_${nextMonthStr}`
-    } else if(currentPeriod === "Q2Q") {
+    } else if(currentPeriod === "Q2Q" || currentPeriod === 'Q#') {
         now_label = `Train Period: ${year}_Q${nowPeriod}`;
         next_label = `Test Period: ${nextYear}_Q${period}`
     } else if(currentPeriod === "H2H") {
-        now_label = `Train Period: ${year}_Q${nowPeriod}-Q${nowPeriod+1}`;
-        next_label = `Test Period: ${nextYear}_Q${period}-Q${period+1}`
+        now_label = `Train Period: ${year}_H${nowPeriod}`;
+        next_label = `Test Period: ${nextYear}_H${period}`
     } else if(currentPeriod === "Y2Y") {
         now_label = `Train Period: ${year}`;
         next_label = `Test Period: ${nextYear}`
     }
 
     let bw = 3;  // default for smaller
-    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q') bw = 5;
+    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q' || currentPeriod === 'Q#') bw = 5;
     else if (currentPeriod === 'H2H') bw = 4;
     else if (currentPeriod === 'Y2Y') bw = 3;
 
     let dashStyle = [];
-    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q') dashStyle = [20, 5];     // 虛線
+    if (currentPeriod === 'M2M' || currentPeriod === 'Q2Q' || currentPeriod === 'Q#') dashStyle = [20, 5];     // 虛線
     else if (currentPeriod === 'H2H') dashStyle = [12, 5];     // 中短虛線
     else if (currentPeriod === 'Y2Y') dashStyle = [5, 2];      // 點線感覺
+
+    let offset = 1;
+    if (currentPeriod.includes('#')) offset = 0;
 
     //console.log(nextFS)
     window.nextPeriodChart = new Chart(ctx, {
@@ -1827,7 +1849,7 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
                 {
                     //label: nextFS.length ? next_label : '',
                     label: next_label,
-                    data: combinedData.map((v, i) => i >= splitIndex-1 ? v : null), // 只畫未來部分
+                    data: combinedData.map((v, i) => i >= splitIndex-offset ? v : null), // 只畫未來部分
                     borderColor: 'rgba(255, 68, 68, 0.5)',
                     backgroundColor: 'rgba(255, 68, 68, 0.5)',
                     borderWidth: bw,
@@ -1883,12 +1905,24 @@ async function updateNextPeriodPreview(currentMarket, currentYear, nowPeriod, po
                 },
                 tooltip: {
                     callbacks: {
+                        title: context => `Day: ${context[0].label}`,
                         label: ctx => {
                             if (!ctx.parsed.y) return `${ctx.dataset.label}: No data yet`;
                             const gain = ((ctx.parsed.y - 10000000) / 10000000 * 100).toFixed(2);
-                            return `${ctx.dataset.label}: $${formatNum(ctx.parsed.y, 2)} (${gain > 0 ? '+' : ''}${gain}%)`;
+                            return [
+                                        `${ctx.dataset.label}`,
+                                        `Fund: $${formatNum(ctx.parsed.y, 2)}`,
+                                        `Gain: ${gain > 0 ? '+' : ''}${gain}%`
+                                    ];
                         }
-                    }
+                    },
+                    titleFont: { size: 16, family: 'Times New Roman' },
+                    bodyFont:  { size: 14, family: 'Times New Roman' },
+                    footerFont:{ size: 14, family: 'Times New Roman' },
+
+                    titleColor: '#fff',
+                    bodyColor:  '#fff',
+                    footerColor:'#fff'
                 }
             }
         }
@@ -1930,17 +1964,12 @@ function drawChart() {
         const period = selectedDate.dataset.period;
         //alert(`${year} ${period}`)
         const monthNames = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
-        let periodName;
+        
+        let periodName = '';        // 預設Y2Y的空白
         if (currentPeriod === 'M2M')
             periodName = monthNames[parseInt(period, 10) - 1] || 'Unknown';
-        else if (currentPeriod === 'Q2Q')
+        else if (currentPeriod === 'Q2Q' || currentPeriod === 'H2H' || currentPeriod === 'Q#')
             periodName = period || 'Unknown';
-        else if (currentPeriod === 'H2H'){
-            let fullPeriodName = period.replace('H','');
-            fullPeriodName = Number(fullPeriodName)*2-1;
-            periodName = `Q${fullPeriodName}-Q${fullPeriodName+1}` || 'Unknown';
-        }else if (currentPeriod === 'Y2Y')
-            periodName = '';
 
         // 取得目前選擇的 dataSource
         const dataSourceSelect = document.getElementById('dataSourceSelect');
