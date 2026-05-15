@@ -190,15 +190,74 @@ async function handleFileUpload(event) {
 
 function updateFileCount() {
     document.getElementById('fileCount').textContent = `已上傳 ${datasetMap.size} 個檔案`;
+    document.getElementById('toggleListBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
+}
+
+// 新增：根據網頁 DOM 順序重新排序 Map，這樣 Chart.js 和表格的順序才會跟著變
+function reorderDatasetMap() {
+    const newMap = new Map();
+    const domEntries = document.querySelectorAll('.file-entry');
+
+    domEntries.forEach(entry => {
+        const fileName = entry.dataset.filename; // 從 data-attribute 抓取原始檔名
+        if (datasetMap.has(fileName)) {
+            newMap.set(fileName, datasetMap.get(fileName));
+        }
+    });
+
+    // 清空舊 Map，用新順序填入
+    datasetMap.clear();
+    newMap.forEach((val, key) => datasetMap.set(key, val));
+    drawChart(); // 重新畫圖與計算表格
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('csvFileInput');
-    const uploadBtn = document.getElementById('uploadBtn');
-    fileInput.addEventListener('change', handleFileUpload);
-    uploadBtn.addEventListener('click', () => fileInput.click());
-    updateFileCount();
+const fileInput = document.getElementById('csvFileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const toggleListBtn = document.getElementById('toggleListBtn');
+const fileListContainer = document.getElementById('fileListContainer');
+
+fileInput.addEventListener('change', handleFileUpload);
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+// 收合/展開按鈕事件
+toggleListBtn.addEventListener('click', () => {
+    fileListContainer.classList.toggle('collapsed');
+    if (fileListContainer.classList.contains('collapsed')) {
+        toggleListBtn.textContent = '展開列表';
+    } else {
+        toggleListBtn.textContent = '收合列表';
+    }
 });
+
+// 實作拖曳排序放置區邏輯
+fileListContainer.addEventListener('dragover', e => {
+    e.preventDefault(); // 允許放置
+    const afterElement = getDragAfterElement(fileListContainer, e.clientY);
+    const draggable = document.querySelector('.dragging');
+    if (afterElement == null) {
+        fileListContainer.appendChild(draggable);
+    } else {
+        fileListContainer.insertBefore(draggable, afterElement);
+    }
+});
+
+updateFileCount();
+});
+
+// 輔助函式：計算拖曳時游標位置在上方還是下方，決定插入位置
+function getDragAfterElement(container, y) {
+const draggableElements = [...container.querySelectorAll('.file-entry:not(.dragging)')];
+return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+    } else {
+        return closest;
+    }
+}, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
 // 下載.csv檔
 function downloadAllDetailedCSV() {
@@ -260,6 +319,27 @@ function addFileEntryUI(fileName, defaultColor) {
     const entry = document.createElement('div');
     entry.className = 'file-entry';
     entry.id = `entry-${CSS.escape(fileName)}`;
+    
+    // 新增：為了能在重排時找回檔名，將檔名存在 dataset 中
+    entry.dataset.filename = fileName;
+    
+    // 新增：允許拖曳
+    entry.draggable = true;
+    
+    // 新增：拖曳手把
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'drag-handle';
+    dragHandle.innerHTML = '☰';
+    
+    // 新增：拖曳開始與結束事件
+    entry.addEventListener('dragstart', () => {
+        entry.classList.add('dragging');
+    });
+    
+    entry.addEventListener('dragend', () => {
+        entry.classList.remove('dragging');
+        reorderDatasetMap(); // 拖曳結束後，依照新順序更新資料與圖表
+    });
 
     const colorPreview = document.createElement('div');
     colorPreview.className = 'color-preview-box-list';
@@ -492,6 +572,7 @@ function addFileEntryUI(fileName, defaultColor) {
         updateColor(newColor, opacity); 
     };
 
+    entry.appendChild(dragHandle);
     entry.appendChild(colorPreview);
     entry.appendChild(randomColorBtn);
     entry.appendChild(nameInput);

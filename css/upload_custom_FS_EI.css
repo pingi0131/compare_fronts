@@ -457,3 +457,35 @@ button.download-btn:hover {
     transform: scale(1.1);
     color: #007bff;
 }
+
+/* ====== 列表收合與拖曳功能 ====== */
+.file-list-container {
+    transition: max-height 0.3s ease;
+}
+.file-list-container.collapsed {
+    display: none;
+}
+#toggleListBtn {
+    background-color: #6c757d;
+    margin-left: 10px;
+}
+#toggleListBtn:hover {
+    background-color: #5a6268;
+}
+.drag-handle {
+    cursor: grab;
+    font-size: 20px;
+    margin-right: 5px;
+    user-select: none;
+    color: #666;
+}
+.drag-handle:active {
+    cursor: grabbing;
+}
+.file-entry.dragging {
+    opacity: 0.5;
+    background-color: #e9ecef;
+    border: 1px dashed #999;
+    padding: 5px;
+    border-radius: 4px;
+}

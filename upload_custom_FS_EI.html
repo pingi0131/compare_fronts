@@ -49,9 +49,10 @@
             <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" multiple style="display: none;" />
             <button id="uploadBtn">選擇檔案</button>
             <span id="fileCount" style="margin-left: 10px; font-weight: bold; color: #000000;">目前有 0 個檔案</span>
+            <button id="toggleListBtn" style="display: none;">收合列表</button>
         </div>
 
-        <div id="fileListContainer" class="controls"></div>
+        <div id="fileListContainer" class="controls file-list-container"></div>
         <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
         <button id="downloadAllBtn" class="reset-btn" onclick="downloadAllDetailedCSV()" style="display: none; background-color: #28a745;">下載詳細指標 (.csv)</button>
         
