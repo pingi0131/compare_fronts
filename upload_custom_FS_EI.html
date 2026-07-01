@@ -55,6 +55,7 @@
         <div id="fileListContainer" class="controls file-list-container"></div>
         <button id="resetColorsBtn" class="reset-btn" onclick="resetColors()" style="display: none;">重置所有顏色</button>
         <button id="downloadAllBtn" class="reset-btn" onclick="downloadAllDetailedCSV()" style="display: none; background-color: #28a745;">下載詳細指標 (.csv)</button>
+        <button id="downloadCombinedDataBtn" class="reset-btn" onclick="downloadCombinedDataCSV()" style="display: none; background-color: #17a2b8;">下載合併數據 (.csv)</button>
         
         <div id="chart-container">
             <canvas id="fundsChart"></canvas>
@@ -64,13 +65,14 @@
             <h2 style="font-family: 'Times New Roman'; text-align: center; color: #000;">Strategy Comparison Metrics</h2>
             <table id="metrics-table">
                 <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Trend Ratio</th>
-                        <th>Emotional Index</th>
-                        <th>Daily Fluctuation</th>
-                        <th>MDD</th>
-                        <th>Final FS</th>
+                    <tr id="table-header-row">
+                        <th data-key="name">Name</th>
+                        <th data-key="tr">Trend Ratio</th>
+                        <th data-key="ei">Emotional Index</th>
+                        <th data-key="flu">Daily Fluctuation</th>
+                        <th data-key="mdd">MDD</th>
+                        <th data-key="fs">Final FS</th>
+                        <th data-key="roi">ROI</th>
                     </tr>
                 </thead>
                 <tbody>

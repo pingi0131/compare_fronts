@@ -430,12 +430,12 @@ h1 {
     text-align: center;
 }
 
-#metrics-table th {
+/* #metrics-table th {
     background-color: #f4f4f4;
     font-weight: bold;
     font-size: 20px;
     color: #333;
-}
+} */
 
 #metrics-table tr:hover {
     background-color: #f9f9f9;
@@ -488,4 +488,31 @@ button.download-btn:hover {
     border: 1px dashed #999;
     padding: 5px;
     border-radius: 4px;
+}
+
+/* 表格排序與拖曳樣式 */
+#metrics-table th {
+    cursor: pointer; /* 提示可點擊排序/拖曳 */
+    position: relative;
+    /* user-select: none; 防止拖曳時反白文字 */
+    transition: background-color 0.2s ease;
+}
+
+.dragging-active th {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#metrics-table th:hover {
+    background-color: #e0e0e0;
+}
+
+/* 排序箭頭 */
+#metrics-table th.asc::after { content: " ▲"; color: #666; font-size: 0.8em; }
+#metrics-table th.desc::after { content: " ▼"; color: #666; font-size: 0.8em; }
+
+/* 拖曳中的半透明狀態 */
+.dragging-col {
+    opacity: 0.5;
+    background-color: #d0d0d0 !important;
 }

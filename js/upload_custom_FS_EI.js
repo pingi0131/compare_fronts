@@ -68,10 +68,10 @@ function parseDataLines(rows) {
     if (validColsList.length >= 2) {
         let last = validColsList[validColsList.length - 1];
         let secondLast = validColsList[validColsList.length - 2];
-        
+
         // 比對兩行內容是否相同
         let isSame = last.length === secondLast.length && last.every((val, index) => val === secondLast[index]);
-        
+
         if (isSame) {
             validColsList.pop(); // 剔除最後一行重複的資料
             duplicateRemoved = true;
@@ -98,13 +98,13 @@ function parseDataLines(rows) {
         } else {
             continue;
         }
-        
+
         parsed.push({ x, y });
     }
 
     // 確保資料依據 X 軸 (天數) 排序，繪製折線圖才不會亂跳
     parsed.sort((a, b) => a.x - b.x);
-    
+
     // 回傳資料陣列以及「是否有刪除重複行」的標記
     return { parsedData: parsed, duplicateRemoved: duplicateRemoved };
 }
@@ -115,7 +115,7 @@ async function handleFileUpload(event) {
 
     for (const file of files) {
         let fileName = file.name;
-        
+
         // 處理重複檔名：若名稱已存在，自動加上 (1), (2)... 後綴
         let counter = 1;
         let originalName = fileName;
@@ -153,7 +153,7 @@ async function handleFileUpload(event) {
             // 取得解析結果並判斷是否需要跳出提醒
             if (parseResult) {
                 parsedData = parseResult.parsedData;
-                
+
                 if (parseResult.duplicateRemoved) {
                     alert(`【提醒】檔案「${file.name}」的最後兩行資料完全相同！\n系統已自動刪除最後一筆重複資料，並使用修正後的資料進行畫圖與計算。`);
                 }
@@ -162,7 +162,7 @@ async function handleFileUpload(event) {
             if (parsedData.length > 0) {
                 const color = defaultColors[datasetMap.size % defaultColors.length] || '#000000';
                 const defaultName = fileName.replace(/\.[^/.]+$/, ""); // 預設拿掉副檔名作為名稱
-                
+
                 datasetMap.set(fileName, {
                     name: defaultName,
                     data: parsedData,
@@ -193,6 +193,149 @@ function updateFileCount() {
     document.getElementById('toggleListBtn').style.display = datasetMap.size > 0 ? 'inline-block' : 'none';
 }
 
+// 表格欄位拖曳與排序功能
+function initTableFeatures() {
+    const table = document.getElementById('metrics-table');
+    const headerRow = table.querySelector('thead tr');
+    let dragColIndex = null;
+
+    // 預設不寫死 draggable 屬性，避免瀏覽器在複製整張表格時漏掉標頭文字
+    Array.from(headerRow.children).forEach((th, idx) => {
+        if (idx === 0) return; // Name 欄位完全不處理拖曳
+
+        // 當滑鼠按下左鍵時，才臨時允許拖曳（確保拖曳欄位功能正常）
+        th.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // 0 代表滑鼠左鍵
+                th.setAttribute('draggable', 'true');
+            }
+        });
+
+        // 滑鼠放開或移開時立刻關閉拖曳屬性，恢復純文字狀態（確保全選、拖曳選取複製完全正常）
+        th.addEventListener('mouseup', () => th.removeAttribute('draggable'));
+        th.addEventListener('mouseleave', () => th.removeAttribute('draggable'));
+    });
+
+    // --- 1. 拖曳重排邏輯 ---
+    headerRow.addEventListener('dragstart', (e) => {
+        const th = e.target.closest('th');
+        if (th) {
+            dragColIndex = Array.from(headerRow.children).indexOf(th);
+            // 如果拖曳第一欄 Name，直接取消動作
+            if (dragColIndex === 0) {
+                e.preventDefault();
+                return;
+            }
+            th.classList.add('dragging-col');
+            // 開始拖曳時，幫整個表格加上 class，防止拖曳中文字被反白
+            table.classList.add('dragging-active');
+        }
+    });
+
+    headerRow.addEventListener('dragover', (e) => e.preventDefault()); // 允許放置
+
+    headerRow.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const th = e.target.closest('th');
+        if (!th) return;
+        
+        const dropColIndex = Array.from(headerRow.children).indexOf(th);
+        const draggingTh = headerRow.children[dragColIndex];
+        if (draggingTh) draggingTh.classList.remove('dragging-col');
+
+        // 【安全防護】如果拖曳第一欄 (Name) 或企圖插到第一欄前面，則阻擋
+        if (dragColIndex === null || dragColIndex === 0 || dropColIndex === 0 || dragColIndex === dropColIndex) return;
+
+        // 移動表頭 (<th>)
+        if (dragColIndex < dropColIndex) {
+            headerRow.insertBefore(draggingTh, th.nextSibling);
+        } else {
+            headerRow.insertBefore(draggingTh, th);
+        }
+
+        // 同步移動表格內每一行的對應儲存格 (<td>)
+        const tbody = table.querySelector('tbody');
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cells = row.children;
+            const cellToMove = cells[dragColIndex];
+            const targetCell = cells[dropColIndex];
+            if (dragColIndex < dropColIndex) {
+                row.insertBefore(cellToMove, targetCell.nextSibling);
+            } else {
+                row.insertBefore(cellToMove, targetCell);
+            }
+        });
+    });
+
+    headerRow.addEventListener('dragend', (e) => {
+        const th = e.target.closest('th');
+        if (th) {
+            th.classList.remove('dragging-col');
+            th.removeAttribute('draggable'); // 拖曳結束後徹底移除屬性，回歸純文字
+        }
+        table.classList.remove('dragging-active');
+    });
+
+    // --- 2. 點擊排序邏輯 ---
+    headerRow.addEventListener('click', (e) => {
+        const th = e.target.closest('th');
+        if (!th) return;
+
+        const colIndex = Array.from(headerRow.children).indexOf(th);
+
+        // 如果點擊的是第一欄 (Name)，則不執行任何排序動作
+        if (colIndex === 0) {
+            return;
+        }
+
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // 決定下一個排序狀態：default -> asc -> desc -> default
+        let nextState = 'asc';
+        if (th.classList.contains('asc')) {
+            nextState = 'desc';
+        } else if (th.classList.contains('desc')) {
+            nextState = 'default';
+        }
+
+        // 清除所有欄位的排序箭頭樣式
+        Array.from(headerRow.children).forEach(h => h.classList.remove('asc', 'desc'));
+
+        // 切換目前點擊欄位的排序狀態
+        // th.classList.toggle('asc', !isAsc);
+        // th.classList.toggle('desc', isAsc);
+
+        if (nextState === 'default') {
+            // 【恢復預設】依據剛才埋進去 <tr> 的 data-index 進行小到大排序
+            rows.sort((a, b) => {
+                return parseInt(a.getAttribute('data-index')) - parseInt(b.getAttribute('data-index'));
+            });
+        } else {
+            // 套用新狀態樣式 (顯示 ▲ 或 ▼)
+            th.classList.add(nextState);
+            const isAsc = (nextState === 'asc');
+            
+            rows.sort((a, b) => {
+                // 取出內容並清除千分位逗號與百分比符號以便純數字比較
+                let valA = a.children[colIndex].innerText.replace(/[%$,]/g, '').trim();
+                let valB = b.children[colIndex].innerText.replace(/[%$,]/g, '').trim();
+                
+                let numA = parseFloat(valA);
+                let numB = parseFloat(valB);
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return isAsc ? numA - numB : numB - numA;
+                }
+                // 如果遇到 Name (純文字)，則使用字母順序排列
+                return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+        }
+
+        // 將重新排序後的行插回表格 (DOM 節點會自動移動)
+        rows.forEach(row => tbody.appendChild(row));
+    });
+}
+
 // 新增：根據網頁 DOM 順序重新排序 Map，這樣 Chart.js 和表格的順序才會跟著變
 function reorderDatasetMap() {
     const newMap = new Map();
@@ -212,51 +355,52 @@ function reorderDatasetMap() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-const fileInput = document.getElementById('csvFileInput');
-const uploadBtn = document.getElementById('uploadBtn');
-const toggleListBtn = document.getElementById('toggleListBtn');
-const fileListContainer = document.getElementById('fileListContainer');
+    const fileInput = document.getElementById('csvFileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const toggleListBtn = document.getElementById('toggleListBtn');
+    const fileListContainer = document.getElementById('fileListContainer');
 
-fileInput.addEventListener('change', handleFileUpload);
-uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileUpload);
+    uploadBtn.addEventListener('click', () => fileInput.click());
 
-// 收合/展開按鈕事件
-toggleListBtn.addEventListener('click', () => {
-    fileListContainer.classList.toggle('collapsed');
-    if (fileListContainer.classList.contains('collapsed')) {
-        toggleListBtn.textContent = '展開列表';
-    } else {
-        toggleListBtn.textContent = '收合列表';
-    }
-});
+    // 收合/展開按鈕事件
+    toggleListBtn.addEventListener('click', () => {
+        fileListContainer.classList.toggle('collapsed');
+        if (fileListContainer.classList.contains('collapsed')) {
+            toggleListBtn.textContent = '展開列表';
+        } else {
+            toggleListBtn.textContent = '收合列表';
+        }
+    });
 
-// 實作拖曳排序放置區邏輯
-fileListContainer.addEventListener('dragover', e => {
-    e.preventDefault(); // 允許放置
-    const afterElement = getDragAfterElement(fileListContainer, e.clientY);
-    const draggable = document.querySelector('.dragging');
-    if (afterElement == null) {
-        fileListContainer.appendChild(draggable);
-    } else {
-        fileListContainer.insertBefore(draggable, afterElement);
-    }
-});
+    // 實作拖曳排序放置區邏輯
+    fileListContainer.addEventListener('dragover', e => {
+        e.preventDefault(); // 允許放置
+        const afterElement = getDragAfterElement(fileListContainer, e.clientY);
+        const draggable = document.querySelector('.dragging');
+        if (afterElement == null) {
+            fileListContainer.appendChild(draggable);
+        } else {
+            fileListContainer.insertBefore(draggable, afterElement);
+        }
+    });
 
-updateFileCount();
+    updateFileCount();
+    initTableFeatures();
 });
 
 // 輔助函式：計算拖曳時游標位置在上方還是下方，決定插入位置
 function getDragAfterElement(container, y) {
-const draggableElements = [...container.querySelectorAll('.file-entry:not(.dragging)')];
-return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) {
-        return { offset: offset, element: child };
-    } else {
-        return closest;
-    }
-}, { offset: Number.NEGATIVE_INFINITY }).element;
+    const draggableElements = [...container.querySelectorAll('.file-entry:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 // 下載.csv檔
@@ -282,7 +426,7 @@ function downloadAllDetailedCSV() {
         csvContent += `Risk:,${metInfor.risk}\n`;
         csvContent += `ExpectedReturn:,${metInfor.exp_return}\n`;
         csvContent += `TrendRatio:,${metInfor.trend_ratio}\n`;
-        
+
         csvContent += "===== Emotional Index =====\n";
         csvContent += `Init FS:,${metInfor.init_fund}\n`;
         csvContent += `Final FS:,${metInfor.final_FS}\n`;
@@ -297,12 +441,67 @@ function downloadAllDetailedCSV() {
     });
 
     // 加上 BOM 標記，確保 Excel 用 UTF-8 開啟時中文字不會變成亂碼
-    const BOM = "\uFEFF"; 
+    const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", `All_FS_indicator_results.csv`); // 統一下載檔名
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// 橫向合併所有檔案數據並下載為單一 CSV
+function downloadCombinedDataCSV() {
+    if (datasetMap.size === 0) {
+        alert("目前沒有資料可以下載！");
+        return;
+    }
+
+    // 1. 初始化資料結構
+    const allDaysSet = new Set(); // 用來收集所有檔案中出現過的不重複天數 (X軸)
+    const fileLookups = [];       // 用來儲存每個檔案的快速對照表 (Day -> FS)
+    const headers = ["Days"];     // CSV 的第一行標題
+
+    // 2. 依照 datasetMap 的順序走訪（此順序會連動拖曳後的結果）
+    datasetMap.forEach((info) => {
+        headers.push(info.name); // 放入自訂名稱或檔名
+        
+        const lookup = new Map();
+        info.data.forEach(pt => {
+            allDaysSet.add(pt.x);   // 收集天數
+            lookup.set(pt.x, pt.y); // 記錄該天數對應的資金水位值 (FS)
+        });
+        fileLookups.push(lookup);
+    });
+
+    // 3. 將所有天數由小到大排序，確保 CSV 由第 0 天/第 1 天依序向下排
+    const sortedDays = Array.from(allDaysSet).sort((a, b) => a - b);
+
+    // 4. 組裝 CSV 內容
+    let csvContent = headers.join(",") + "\n";
+
+    sortedDays.forEach(day => {
+        let row = [day]; // 每一行的開頭是天數
+        
+        // 依序填入各個檔案在該天數的數值
+        fileLookups.forEach(lookup => {
+            let val = lookup.has(day) ? Number(lookup.get(day)).toFixed(2) : ""; // 如果該檔案在這一天沒資料，則留空
+            row.push(val);
+        });
+        
+        csvContent += row.join(",") + "\n";
+    });
+
+    // 5. 加上 BOM 標記並觸發瀏覽器下載
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Combined_FS_Data.csv`); // 設定下載檔名
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -319,23 +518,23 @@ function addFileEntryUI(fileName, defaultColor) {
     const entry = document.createElement('div');
     entry.className = 'file-entry';
     entry.id = `entry-${CSS.escape(fileName)}`;
-    
+
     // 新增：為了能在重排時找回檔名，將檔名存在 dataset 中
     entry.dataset.filename = fileName;
-    
+
     // 新增：允許拖曳
     entry.draggable = true;
-    
+
     // 新增：拖曳手把
     const dragHandle = document.createElement('span');
     dragHandle.className = 'drag-handle';
     dragHandle.innerHTML = '☰';
-    
+
     // 新增：拖曳開始與結束事件
     entry.addEventListener('dragstart', () => {
         entry.classList.add('dragging');
     });
-    
+
     entry.addEventListener('dragend', () => {
         entry.classList.remove('dragging');
         reorderDatasetMap(); // 拖曳結束後，依照新順序更新資料與圖表
@@ -351,7 +550,7 @@ function addFileEntryUI(fileName, defaultColor) {
     const modal = document.createElement('div');
     modal.className = 'color-picker-modal';
     modal.style.display = 'none';
-    
+
     // 原封不動的調色盤 HTML
     modal.innerHTML = `
         <div class="color-picker-tabs">
@@ -441,7 +640,7 @@ function addFileEntryUI(fileName, defaultColor) {
     radiusInput.style.fontSize = '14px';
     radiusInput.style.marginLeft = '6px';
     radiusInput.title = '線條粗細 / 點大小';
-    
+
     const handleRadiusChange = () => {
         let value = parseFloat(radiusInput.value);
         if (isNaN(value) || value < 0.5) value = 1;
@@ -508,7 +707,7 @@ function addFileEntryUI(fileName, defaultColor) {
     const confirmBtn = modal.querySelector(`#${modalId}-hexrgb .confirm-btn`);
     const opacityNumber = modal.querySelector(`#${modalId}-hexrgb .opacity-number`);
     const rgbNumbers = modal.querySelectorAll(`#${modalId}-hexrgb .rgb-number`);
-    
+
     confirmBtn.addEventListener('click', () => {
         const r = parseInt(rgbNumbers[0].value) || 0;
         const g = parseInt(rgbNumbers[1].value) || 0;
@@ -569,7 +768,7 @@ function addFileEntryUI(fileName, defaultColor) {
     randomColorBtn.onclick = () => {
         const newColor = getRandomColor();
         const opacity = datasetMap.get(fileName).opacity || 1;
-        updateColor(newColor, opacity); 
+        updateColor(newColor, opacity);
     };
 
     entry.appendChild(dragHandle);
@@ -587,10 +786,10 @@ function getRandomColor() {
     const currentColors = Array.from(datasetMap.values()).map(info => info.color.toLowerCase());
     let newColor;
     let isDuplicate = true;
-    
+
     while (isDuplicate) {
         // 生成隨機 Hex 顏色
-        newColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        newColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
         if (!currentColors.includes(newColor)) {
             isDuplicate = false;
         }
@@ -604,20 +803,20 @@ function resetColors() {
         const newColor = defaultColors[index % defaultColors.length] || '#000000';
         data.color = newColor;
         data.pointRadius = 2; // 重置粗細
-        
+
         const entryDiv = document.getElementById(`entry-${CSS.escape(fileName)}`);
         if (entryDiv) {
             const colorPreview = entryDiv.querySelector('.color-preview-box-list');
             if (colorPreview) colorPreview.style.backgroundColor = newColor;
-            
+
             const radiusInput = entryDiv.querySelector('.point-radius-input');
             if (radiusInput) radiusInput.value = 2;
-            
+
             // 同步更新 Modal 內的顏色
             const modal = entryDiv.querySelector('.color-picker-modal');
             if (modal) {
                 const nativeColorInput = modal.querySelector('.native-color-input');
-                if(nativeColorInput) nativeColorInput.value = newColor;
+                if (nativeColorInput) nativeColorInput.value = newColor;
             }
         }
     });
@@ -627,7 +826,7 @@ function resetColors() {
 function calculateMetrics() {
     const tbody = document.querySelector('#metrics-table tbody');
     tbody.innerHTML = '';
-    
+
     if (datasetMap.size === 0) {
         document.getElementById('metrics-container').style.display = 'none';
         return;
@@ -639,10 +838,10 @@ function calculateMetrics() {
     datasetMap.forEach((info, fileName) => {
         const data = info.data;
         const days = data.length;
-        if (days < 2) return; 
-        
+        if (days < 2) return;
+
         const FS = data.map(pt => pt.y);
-        
+
         let peakVal = FS[0], peakDay = 1;
         let valleyVal = FS[0], valleyDay = 1;
         let max_dd_pct = 0, max_dd_val = 0;
@@ -671,7 +870,7 @@ function calculateMetrics() {
         let final_FS = FS[days - 1];
         let emo_profit = (final_FS - init_fund) / (days - 1);
         let emo_fluctuation = 0;
-        
+
         for (let i = 0; i < days; i++) {
             let FL_i = emo_profit * i + init_fund;
             emo_fluctuation += Math.pow(FL_i - FS[i], 2);
@@ -742,6 +941,8 @@ function calculateMetrics() {
         else if (exp_return < 0) trend_ratio = exp_return * risk;
         else trend_ratio = exp_return / risk;
 
+        let roi = (init_fund !== 0) ? ((final_FS - init_fund) / init_fund) * 100 : 0;
+
         // ==== 把 CSV 會用到的所有詳細變數都存進 info.metrics ====
         info.metrics = {
             days: days,
@@ -759,7 +960,8 @@ function calculateMetrics() {
             valleyVal: valleyVal,
             valleyDay: valleyDay,
             max_dd_val: max_dd_val,
-            mddPercent: mddPercent
+            mddPercent: mddPercent,
+            roi: roi
         };
 
         // 把結果存入陣列中
@@ -769,13 +971,14 @@ function calculateMetrics() {
             emotional_index: emotional_index,
             flu: flu,
             mddPercent: mddPercent,
-            final_FS: final_FS
+            final_FS: final_FS,
+            roi: roi
         });
     });
 
     // 2. 判斷是否有 2 個檔案以上，並找出每個指標的「最佳值」
     let isCompare = metricsData.length >= 2;
-    let bestTR = -Infinity, bestEI = -Infinity, bestFlu = Infinity, bestMDD = Infinity, bestFinalFS = -Infinity;
+    let bestTR = -Infinity, bestEI = -Infinity, bestFlu = Infinity, bestMDD = Infinity, bestFinalFS = -Infinity, bestROI = -Infinity;
 
     if (isCompare) {
         metricsData.forEach(d => {
@@ -784,25 +987,41 @@ function calculateMetrics() {
             if (d.flu < bestFlu) bestFlu = d.flu;                           // Flu: 越低越穩
             if (d.mddPercent < bestMDD) bestMDD = d.mddPercent;             // MDD: 越低越好
             if (d.final_FS > bestFinalFS) bestFinalFS = d.final_FS;         // Final FS: 越高越好
+            if (d.roi > bestROI) bestROI = d.roi;                           // ROI: 越高越好
         });
     }
 
     // 3. 渲染表格，並動態判斷是否要標紅字
-    metricsData.forEach(d => {
+    metricsData.forEach((d, index) => {                 // 使用 index 參數
         let trDisplay = d.trend_ratio < 0 ? d.trend_ratio.toExponential(2).toUpperCase().replace(/E([+-])(\d)$/, 'E$10$2') : d.trend_ratio.toFixed(6);
 
         // 判斷樣式的輔助函式
         const getStyle = (val, bestVal) => (isCompare && val === bestVal) ? 'color: red; font-weight: bold;' : '';
 
+        // 每個 key 對應的 HTML 字串
+        const cellContents = {
+            'name': `<td style="color: ${d.info.color}; font-weight: bold;">${d.info.name}</td>`,
+            'tr': `<td style="${getStyle(d.trend_ratio, bestTR)}">${trDisplay}</td>`,
+            'ei': `<td style="${getStyle(d.emotional_index, bestEI)}">${d.emotional_index.toFixed(6)}</td>`,
+            'flu': `<td style="${getStyle(d.flu, bestFlu)}">${d.flu.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>`,
+            'mdd': `<td style="${getStyle(d.mddPercent, bestMDD)}">${d.mddPercent.toFixed(2)}%</td>`,
+            'fs': `<td style="${getStyle(d.final_FS, bestFinalFS)}">${d.final_FS.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>`,
+            'roi': `<td style="${getStyle(d.roi, bestROI)}">${d.roi.toFixed(2)}%</td>`
+        };
+
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="color: ${d.info.color}; font-weight: bold;">${d.info.name}</td>
-            <td style="${getStyle(d.trend_ratio, bestTR)}">${trDisplay}</td>
-            <td style="${getStyle(d.emotional_index, bestEI)}">${d.emotional_index.toFixed(6)}</td>
-            <td style="${getStyle(d.flu, bestFlu)}">${d.flu.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-            <td style="${getStyle(d.mddPercent, bestMDD)}">${d.mddPercent.toFixed(2)}%</td>
-            <td style="${getStyle(d.final_FS, bestFinalFS)}">${d.final_FS.toLocaleString(undefined, {maximumFractionDigits: 0})}</td> 
-        `;
+        tr.setAttribute('data-index', index); // 這列資料的原始檔案排序位置
+        
+        let trHtml = '';
+        // 依據目前 col 的排序來組合儲存格內容，防止拖曳後圖表更新導致錯位
+        document.querySelectorAll('#metrics-table th').forEach(th => {
+            const key = th.getAttribute('data-key');
+            if (cellContents[key]) {
+                trHtml += cellContents[key];
+            }
+        });
+
+        tr.innerHTML = trHtml;
         tbody.appendChild(tr);
     });
 
@@ -818,6 +1037,7 @@ function drawChart() {
         document.getElementById('chart-container').style.display = 'none';
         document.getElementById('resetColorsBtn').style.display = 'none';
         document.getElementById('downloadAllBtn').style.display = 'none';
+        document.getElementById('downloadCombinedDataBtn').style.display = 'none';
         document.getElementById('metrics-container').style.display = 'none';
         return;
     }
@@ -867,11 +1087,11 @@ function drawChart() {
                     titleFont: { family: 'Times New Roman', size: 16 },
                     bodyFont: { family: 'Times New Roman', size: 16 },
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             return `Days: ${context[0].parsed.x}`;
                         },
                         label: function (context) {
-                            const yVal = context.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const yVal = context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             return `${context.dataset.label}: ${yVal}`;
                         }
                     }
@@ -908,10 +1128,10 @@ function drawChart() {
                         font: { family: 'Times New Roman', size: 24, weight: 'bold' },
                         color: '#000'
                     },
-                    ticks: { 
-                        font: { family: 'Times New Roman', size: 18, weight: 'bold' }, 
+                    ticks: {
+                        font: { family: 'Times New Roman', size: 18, weight: 'bold' },
                         color: '#000',
-                        callback: function(value) {
+                        callback: function (value) {
                             return value.toLocaleString(); // 加入千分位逗號
                         }
                     },
@@ -924,13 +1144,14 @@ function drawChart() {
 
     document.getElementById('chart-container').style.display = 'block';
     document.getElementById('chart-container').addEventListener('dblclick', function () {
-        if(chartInstance) chartInstance.resetZoom();
+        if (chartInstance) chartInstance.resetZoom();
     });
 
     // 同時控制「重置所有顏色」和「下載全部指標」按鈕的顯示狀態
     let showButtons = datasetMap.size > 0 ? 'inline-block' : 'none';
     document.getElementById('resetColorsBtn').style.display = showButtons;
     document.getElementById('downloadAllBtn').style.display = showButtons;
+    document.getElementById('downloadCombinedDataBtn').style.display = showButtons;
 
     calculateMetrics();
 }
